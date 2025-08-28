@@ -221,6 +221,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#ai">AI Models</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#cfd">CFD Analysis</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -234,9 +237,9 @@
             <div class="row mb-4">
                 <div class="col-12">
                     <h1 class="text-white text-center mb-4">
-                        <i class="fas fa-chart-line me-3"></i>Financial AI Dashboard
+                        <i class="fas fa-chart-line me-3"></i>Financial AI - CFD Trading Analyzer
                     </h1>
-                    <p class="text-white text-center lead">Advanced AI-powered financial analysis, portfolio optimization, and trading strategies</p>
+                    <p class="text-white text-center lead">Advanced AI-powered CFD analysis for Trading212 - Find the best trading setups in real-time</p>
                 </div>
             </div>
 
@@ -250,6 +253,57 @@
                         <div class="card-body">
                             <div id="marketOverview" class="row">
                                 <!-- Market data will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CFD Opportunities Scanner -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-search-dollar me-2"></i>CFD Opportunities Scanner
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="scanType" class="form-label">Scan Type</label>
+                                    <select class="form-control" id="scanType">
+                                        <option value="all">All Instruments</option>
+                                        <option value="stocks">Stocks Only</option>
+                                        <option value="indices">Indices Only</option>
+                                        <option value="forex">Forex Only</option>
+                                        <option value="commodities">Commodities Only</option>
+                                        <option value="crypto">Crypto Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="scanRegion" class="form-label">Region (Stocks)</label>
+                                    <select class="form-control" id="scanRegion">
+                                        <option value="US">United States</option>
+                                        <option value="UK">United Kingdom</option>
+                                        <option value="EU">Europe</option>
+                                        <option value="AU">Australia</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="minConfidence" class="form-label">Min Confidence</label>
+                                    <select class="form-control" id="minConfidence">
+                                        <option value="0.8">80%+ (High Quality)</option>
+                                        <option value="0.7" selected>70%+ (Good Quality)</option>
+                                        <option value="0.6">60%+ (Moderate Quality)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-success w-100" onclick="scanCFDOpportunities()" style="margin-top: 32px;">
+                                        <i class="fas fa-search me-2"></i>Scan Opportunities
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="cfdScannerResults" class="mt-3">
+                                <!-- CFD scanner results will be displayed here -->
                             </div>
                         </div>
                     </div>
@@ -288,6 +342,57 @@
                         <div class="card-body">
                             <div class="chart-container">
                                 <canvas id="priceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CFD Analysis Section -->
+        <section id="cfd" class="mb-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-chart-candlestick me-2"></i>CFD Analysis for Trading212
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h5>Individual CFD Setup Analysis</h5>
+                                    <div class="mb-3">
+                                        <label for="cfdSymbol" class="form-label">Instrument Symbol</label>
+                                        <input type="text" class="form-control" id="cfdSymbol" placeholder="e.g., AAPL, EUR/USD, BTC/USD">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="cfdPeriod" class="form-label">Analysis Period</label>
+                                        <select class="form-control" id="cfdPeriod">
+                                            <option value="1mo">1 Month</option>
+                                            <option value="3mo">3 Months</option>
+                                            <option value="6mo" selected>6 Months</option>
+                                            <option value="1y">1 Year</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="analyzeCFDSetup()">
+                                        <i class="fas fa-chart-line me-2"></i>Analyze CFD Setup
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>CFD Analysis Actions</h5>
+                                    <button class="btn btn-success me-2 mb-2" onclick="getTopCFDSetups()">
+                                        <i class="fas fa-trophy me-2"></i>Top Setups
+                                    </button>
+                                    <button class="btn btn-warning me-2 mb-2" onclick="generateCFDReport()">
+                                        <i class="fas fa-file-alt me-2"></i>Generate Report
+                                    </button>
+                                    <button class="btn btn-info me-2 mb-2" onclick="getCFDInstruments()">
+                                        <i class="fas fa-list me-2"></i>Available Instruments
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="cfdAnalysisResults" class="mt-3">
+                                <!-- CFD analysis results will be displayed here -->
                             </div>
                         </div>
                     </div>
@@ -540,6 +645,494 @@
                 `;
                 container.innerHTML += marketCard;
             });
+        }
+
+        // CFD Scanner
+        async function scanCFDOpportunities() {
+            const scanType = document.getElementById('scanType').value;
+            const scanRegion = document.getElementById('scanRegion').value;
+            const minConfidence = document.getElementById('minConfidence').value;
+            
+            showLoading();
+            
+            try {
+                let url = `/api/cfd/scan?scan_type=${scanType}&min_confidence=${minConfidence}`;
+                if (scanType === 'stocks') {
+                    url += `&region=${scanRegion}`;
+                }
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.error) {
+                    showAlert('Error scanning CFD opportunities: ' + result.error, 'danger');
+                } else {
+                    displayCFDScannerResults(result);
+                }
+                
+            } catch (error) {
+                showAlert('Error scanning CFD opportunities: ' + error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayCFDScannerResults(result) {
+            const container = document.getElementById('cfdScannerResults');
+            
+            if (result.opportunities_found === 0) {
+                container.innerHTML = '<div class="alert alert-info">No CFD opportunities found matching your criteria. Try lowering the confidence threshold or changing the scan type.</div>';
+                return;
+            }
+            
+            let html = `
+                <h6>CFD Opportunities Found: ${result.opportunities_found}</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Direction</th>
+                                <th>Confidence</th>
+                                <th>Setup Score</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            result.top_opportunities.forEach(opportunity => {
+                const directionClass = opportunity.direction === 'long' ? 'text-success' : 
+                                     opportunity.direction === 'short' ? 'text-danger' : 'text-warning';
+                const directionIcon = opportunity.direction === 'long' ? 'fa-arrow-up' : 
+                                    opportunity.direction === 'short' ? 'fa-arrow-down' : 'fa-minus';
+                
+                html += `
+                    <tr>
+                        <td><strong>${opportunity.symbol}</strong></td>
+                        <td>${opportunity.setup_type}</td>
+                        <td><span class="${directionClass}"><i class="fas ${directionIcon} me-1"></i>${opportunity.direction.toUpperCase()}</span></td>
+                        <td><span class="badge bg-${opportunity.confidence >= 0.8 ? 'success' : opportunity.confidence >= 0.7 ? 'warning' : 'info'}">${(opportunity.confidence * 100).toFixed(0)}%</span></td>
+                        <td>${(opportunity.setup_score * 100).toFixed(0)}%</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="analyzeCFDSetup('${opportunity.symbol}')">
+                                <i class="fas fa-chart-line me-1"></i>Analyze
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // CFD Analysis
+        async function analyzeCFDSetup(symbol = null) {
+            const symbolInput = symbol || document.getElementById('cfdSymbol').value.trim().toUpperCase();
+            const period = document.getElementById('cfdPeriod').value;
+            
+            if (!symbolInput) {
+                showAlert('Please enter an instrument symbol', 'warning');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch(`/api/cfd/setups/${symbolInput}?period=${period}`);
+                const result = await response.json();
+                
+                if (result.error) {
+                    showAlert('Error analyzing CFD setup: ' + result.error, 'danger');
+                } else {
+                    displayCFDAnalysis(result);
+                }
+                
+            } catch (error) {
+                showAlert('Error analyzing CFD setup: ' + error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayCFDAnalysis(result) {
+            const container = document.getElementById('cfdAnalysisResults');
+            const setup = result.setup;
+            
+            const directionClass = setup.direction === 'long' ? 'text-success' : 
+                                 setup.direction === 'short' ? 'text-danger' : 'text-warning';
+            const directionIcon = setup.direction === 'long' ? 'fa-arrow-up' : 
+                                setup.direction === 'short' ? 'fa-arrow-down' : 'fa-minus';
+            
+            let html = `
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-chart-candlestick me-2"></i>CFD Setup Analysis: ${result.symbol}</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Setup Type:</strong> ${setup.setup_type}<br>
+                            <strong>Direction:</strong> <span class="${directionClass}"><i class="fas ${directionIcon} me-1"></i>${setup.direction.toUpperCase()}</span><br>
+                            <strong>Confidence:</strong> <span class="badge bg-${setup.confidence >= 0.8 ? 'success' : setup.confidence >= 0.7 ? 'warning' : 'info'}">${(setup.confidence * 100).toFixed(0)}%</span><br>
+                            <strong>Setup Score:</strong> ${(setup.setup_score * 100).toFixed(0)}%
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Trend:</strong> ${setup.trend_analysis.trend_strength}<br>
+                            <strong>Momentum:</strong> ${setup.momentum_analysis.macd_signal}<br>
+                            <strong>Volatility:</strong> ${setup.volatility_analysis.volatility_trend}<br>
+                            <strong>Volume:</strong> ${setup.volume_analysis.volume_trend}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Entry Levels
+            if (setup.entry_levels) {
+                html += `
+                    <h6>Entry Levels</h6>
+                    <div class="row">
+                `;
+                
+                Object.entries(setup.entry_levels).forEach(([level, price]) => {
+                    html += `
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="metric-label">${level.charAt(0).toUpperCase() + level.slice(1)}</div>
+                                    <div class="metric-value">$${price.toFixed(4)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            }
+            
+            // Stop Loss and Take Profit
+            if (setup.stop_loss && setup.take_profit) {
+                html += `
+                    <h6>Risk Management</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="metric-label">Stop Loss</div>
+                                    <div class="metric-value text-danger">$${setup.stop_loss.level.toFixed(4)}</div>
+                                    <small class="text-muted">${(setup.stop_loss.percentage * 100).toFixed(1)}%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="metric-label">Take Profit</div>
+                                    <div class="metric-value text-success">$${setup.take_profit.level.toFixed(4)}</div>
+                                    <small class="text-muted">${setup.take_profit.percentage.toFixed(1)}%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="metric-label">Risk/Reward</div>
+                                    <div class="metric-value">${setup.take_profit.risk_reward_ratio.toFixed(1)}:1</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Risk Metrics
+            if (setup.risk_metrics) {
+                html += `
+                    <h6>Risk Analysis</h6>
+                    <div class="alert alert-warning">
+                        <strong>Position Size:</strong> ${setup.risk_metrics.position_size_percentage.toFixed(1)}% of account<br>
+                        <strong>Max Loss:</strong> ${setup.risk_metrics.max_loss_percentage.toFixed(1)}% per trade<br>
+                        <strong>Risk Amount:</strong> $${setup.risk_metrics.risk_amount.toFixed(4)}<br>
+                        <strong>Reward Amount:</strong> $${setup.risk_metrics.reward_amount.toFixed(4)}
+                    </div>
+                `;
+            }
+            
+            // Support and Resistance
+            if (setup.support_resistance.support_levels.length > 0 || setup.support_resistance.resistance_levels.length > 0) {
+                html += `
+                    <h6>Support & Resistance</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Support Levels:</strong><br>
+                            ${setup.support_resistance.support_levels.map(level => `$${level.toFixed(4)}`).join(', ')}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Resistance Levels:</strong><br>
+                            ${setup.support_resistance.resistance_levels.map(level => `$${level.toFixed(4)}`).join(', ')}
+                        </div>
+                    </div>
+                    <small class="text-muted">Current Position: ${setup.support_resistance.current_position}</small>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // Get Top CFD Setups
+        async function getTopCFDSetups() {
+            const instrumentType = document.getElementById('scanType').value;
+            const region = document.getElementById('scanRegion').value;
+            const minConfidence = document.getElementById('minConfidence').value;
+            
+            showLoading();
+            
+            try {
+                let url = `/api/cfd/top-setups?type=${instrumentType}&min_confidence=${minConfidence}`;
+                if (instrumentType === 'stocks') {
+                    url += `&region=${region}`;
+                }
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.error) {
+                    showAlert('Error getting top CFD setups: ' + result.error, 'danger');
+                } else {
+                    displayTopCFDSetups(result);
+                }
+                
+            } catch (error) {
+                showAlert('Error getting top CFD setups: ' + error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayTopCFDSetups(result) {
+            const container = document.getElementById('cfdAnalysisResults');
+            
+            let html = `
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-trophy me-2"></i>Top CFD Setups - ${result.instrument_type.toUpperCase()}</h5>
+                    <p>Found ${result.setups_found} setups from ${result.total_instruments} instruments</p>
+                </div>
+            `;
+            
+            if (result.top_setups.length === 0) {
+                html += '<div class="alert alert-info">No setups found matching the criteria.</div>';
+                container.innerHTML = html;
+                return;
+            }
+            
+            html += `
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Symbol</th>
+                                <th>Setup Type</th>
+                                <th>Direction</th>
+                                <th>Confidence</th>
+                                <th>Setup Score</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            result.top_setups.forEach((setup, index) => {
+                const directionClass = setup.direction === 'long' ? 'text-success' : 
+                                     setup.direction === 'short' ? 'text-danger' : 'text-warning';
+                const directionIcon = setup.direction === 'long' ? 'fa-arrow-up' : 
+                                    setup.direction === 'short' ? 'fa-arrow-down' : 'fa-minus';
+                
+                html += `
+                    <tr>
+                        <td><span class="badge bg-primary">${index + 1}</span></td>
+                        <td><strong>${setup.symbol}</strong></td>
+                        <td>${setup.setup_type}</td>
+                        <td><span class="${directionClass}"><i class="fas ${directionIcon} me-1"></i>${setup.direction.toUpperCase()}</span></td>
+                        <td><span class="badge bg-${setup.confidence >= 0.8 ? 'success' : setup.confidence >= 0.7 ? 'warning' : 'info'}">${(setup.confidence * 100).toFixed(0)}%</span></td>
+                        <td>${(setup.setup_score * 100).toFixed(0)}%</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="analyzeCFDSetup('${setup.symbol}')">
+                                <i class="fas fa-chart-line me-1"></i>Analyze
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Generate CFD Report
+        async function generateCFDReport() {
+            const instrumentType = document.getElementById('scanType').value;
+            const region = document.getElementById('scanRegion').value;
+            const minConfidence = document.getElementById('minConfidence').value;
+            
+            showLoading();
+            
+            try {
+                let url = `/api/cfd/report?type=${instrumentType}&min_confidence=${minConfidence}`;
+                if (instrumentType === 'stocks') {
+                    url += `&region=${region}`;
+                }
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.error) {
+                    showAlert('Error generating CFD report: ' + result.error, 'danger');
+                } else {
+                    displayCFDReport(result);
+                }
+                
+            } catch (error) {
+                showAlert('Error generating CFD report: ' + error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayCFDReport(result) {
+            const container = document.getElementById('cfdAnalysisResults');
+            
+            let html = `
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-file-alt me-2"></i>CFD Trading Report</h5>
+                    <p>Generated comprehensive report with ${result.summary.setups_found} setups from ${result.summary.total_instruments} instruments</p>
+                </div>
+            `;
+            
+            // Summary
+            html += `
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <div class="metric-value">${result.summary.total_instruments}</div>
+                                <div class="metric-label">Total Instruments</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <div class="metric-value">${result.summary.setups_found}</div>
+                                <div class="metric-label">Setups Found</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <div class="metric-value">${(result.summary.top_confidence * 100).toFixed(0)}%</div>
+                                <div class="metric-label">Top Confidence</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <div class="metric-value">${(result.summary.average_confidence * 100).toFixed(0)}%</div>
+                                <div class="metric-label">Avg Confidence</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Report content
+            html += `
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-file-text me-2"></i>Detailed Report
+                    </div>
+                    <div class="card-body">
+                        <pre style="white-space: pre-wrap; font-size: 12px;">${result.report}</pre>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Get CFD Instruments
+        async function getCFDInstruments() {
+            try {
+                const response = await fetch('/api/cfd/instruments');
+                const result = await response.json();
+                
+                if (result.error) {
+                    showAlert('Error getting CFD instruments: ' + result.error, 'danger');
+                } else {
+                    displayCFDInstruments(result.instruments);
+                }
+                
+            } catch (error) {
+                showAlert('Error getting CFD instruments: ' + error.message, 'danger');
+            }
+        }
+
+        function displayCFDInstruments(instruments) {
+            const container = document.getElementById('cfdAnalysisResults');
+            
+            let html = `
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-list me-2"></i>Available CFD Instruments</h5>
+                    <p>Browse available instruments for CFD trading analysis</p>
+                </div>
+            `;
+            
+            Object.entries(instruments).forEach(([type, instrumentList]) => {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-line me-2"></i>${type.toUpperCase()} Instruments
+                        </div>
+                        <div class="card-body">
+                `;
+                
+                if (typeof instrumentList === 'object' && !Array.isArray(instrumentList)) {
+                    // Regional stocks
+                    Object.entries(instrumentList).forEach(([region, symbols]) => {
+                        html += `
+                            <h6>${region} (${symbols.length} instruments)</h6>
+                            <div class="mb-2">
+                                ${symbols.map(symbol => `<span class="badge bg-secondary me-1 mb-1">${symbol}</span>`).join('')}
+                            </div>
+                        `;
+                    });
+                } else {
+                    // Other instruments
+                    html += `
+                        <div class="mb-2">
+                            ${instrumentList.map(symbol => `<span class="badge bg-secondary me-1 mb-1">${symbol}</span>`).join('')}
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
         }
 
         // Stock Analysis
