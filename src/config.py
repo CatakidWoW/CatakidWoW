@@ -7,38 +7,34 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    """Configuration settings for Financial AI System"""
+    """Configuration settings for Financial AI System - Free Data Sources Only"""
     
-    # Real-time API Keys
-    ALPHA_VANTAGE_API_KEY = os.getenv('ALPHA_VANTAGE_API_KEY', '')
-    YAHOO_FINANCE_ENABLED = os.getenv('YAHOO_FINANCE_ENABLED', 'true').lower() == 'true'
-    FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY', '')
-    POLYGON_API_KEY = os.getenv('POLYGON_API_KEY', '')
-    IEX_CLOUD_API_KEY = os.getenv('IEX_CLOUD_API_KEY', '')
-    NEWS_API_KEY = os.getenv('NEWS_API_KEY', '')
-    TWELVE_DATA_API_KEY = os.getenv('TWELVE_DATA_API_KEY', '')
-    
-    # Real-time News Sources
-    NEWS_SOURCES = {
-        'newsapi': 'https://newsapi.org/v2/',
-        'finnhub': 'https://finnhub.io/api/v1/',
-        'polygon': 'https://api.polygon.io/v2/',
-        'alpha_vantage': 'https://www.alphavantage.co/query',
-        'yahoo_finance': 'https://query2.finance.yahoo.com/v8/finance/',
-        'reuters': 'https://www.reuters.com/markets/',
-        'bloomberg': 'https://www.bloomberg.com/markets/',
-        'ft': 'https://www.ft.com/markets/',
-        'cnbc': 'https://www.cnbc.com/markets/',
-        'marketwatch': 'https://www.marketwatch.com/markets/'
+    # Free Data Sources (No API Keys Required)
+    FREE_DATA_SOURCES = {
+        'primary': 'yahoo_finance',  # Yahoo Finance - No API key needed
+        'backup': 'web_scraping',    # Web scraping from public financial sites
+        'news': 'public_news'        # Public financial news sites
     }
     
-    # Real-time Market Data
+    # Free Market Data Sources
     MARKET_DATA_SOURCES = {
-        'stocks': ['yahoo_finance', 'alpha_vantage', 'polygon', 'iex_cloud'],
-        'forex': ['alpha_vantage', 'polygon', 'twelve_data'],
-        'crypto': ['alpha_vantage', 'polygon', 'yahoo_finance'],
-        'commodities': ['alpha_vantage', 'polygon', 'yahoo_finance'],
-        'indices': ['yahoo_finance', 'alpha_vantage', 'polygon']
+        'stocks': ['yahoo_finance'],      # Yahoo Finance for stocks
+        'forex': ['yahoo_finance'],       # Yahoo Finance for forex
+        'crypto': ['yahoo_finance'],      # Yahoo Finance for crypto
+        'commodities': ['yahoo_finance'], # Yahoo Finance for commodities
+        'indices': ['yahoo_finance']      # Yahoo Finance for indices
+    }
+    
+    # Free News Sources (Public websites)
+    FREE_NEWS_SOURCES = {
+        'yahoo_finance': 'https://finance.yahoo.com/news/',
+        'reuters': 'https://www.reuters.com/markets/',
+        'bloomberg': 'https://www.bloomberg.com/markets/',
+        'ft': 'https://www.ft.com/markets',
+        'cnbc': 'https://www.cnbc.com/markets/',
+        'marketwatch': 'https://www.marketwatch.com/markets/',
+        'investing': 'https://www.investing.com/news/',
+        'seeking_alpha': 'https://seekingalpha.com/news'
     }
     
     # Real-time Data Intervals
@@ -98,11 +94,23 @@ class Config:
         'data_freshness': 300      # 5 minutes max age
     }
     
-    # API Rate Limits
-    RATE_LIMITS = {
-        'alpha_vantage': 5,       # 5 calls per minute
-        'polygon': 5,             # 5 calls per minute
-        'finnhub': 60,            # 60 calls per minute
-        'newsapi': 100,           # 100 calls per day
-        'yahoo_finance': 2000     # 2000 calls per hour
+    # Free Data Rate Limits (Conservative to avoid being blocked)
+    FREE_DATA_LIMITS = {
+        'yahoo_finance': {
+            'requests_per_minute': 30,    # Conservative limit
+            'requests_per_hour': 1000,    # Conservative limit
+            'delay_between_requests': 2   # 2 seconds between requests
+        },
+        'web_scraping': {
+            'requests_per_minute': 10,    # Very conservative for scraping
+            'requests_per_hour': 200,     # Very conservative for scraping
+            'delay_between_requests': 6   # 6 seconds between requests
+        }
     }
+    
+    # User Agent for web requests (to avoid being blocked)
+    USER_AGENTS = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    ]

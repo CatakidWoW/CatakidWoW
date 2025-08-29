@@ -1,4 +1,4 @@
-# Financial AI System Dependencies
+# Financial AI System Dependencies - FREE Data Sources Only
 # Core ML and Data Science
 numpy==1.24.3
 pandas==2.0.3
@@ -9,7 +9,7 @@ scipy==1.11.1
 tensorflow==2.13.0
 keras==2.13.1
 
-# Financial Libraries
+# Financial Libraries (FREE)
 yfinance==0.2.18
 pandas-datareader==0.10.0
 ta==0.10.2
@@ -20,16 +20,13 @@ empyrical==0.5.5
 flask==2.3.2
 flask-cors==4.0.0
 
-# API and Data
+# FREE Data and Web Scraping
 requests==2.31.0
 beautifulsoup4==4.12.2
-alpha-vantage==2.3.1
 python-dotenv==1.0.0
 
-# Real-time Data Dependencies
+# Real-time Data Dependencies (FREE)
 pytz==2023.3
-websocket-client==1.6.1
-ccxt==4.0.0
 
 # Utilities
 jupyter==1.0.0

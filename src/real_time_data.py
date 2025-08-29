@@ -1,32 +1,45 @@
 """
 Real-Time Data Manager for Financial AI
-Fetches live market data from authentic sources with no synthetic information
+Fetches live market data from FREE sources with no API keys required
 """
 import pandas as pd
 import numpy as np
 import requests
 import logging
 import time
+import random
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
 import pytz
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yfinance as yf
+from bs4 import BeautifulSoup
 from src.config import Config
 
 class RealTimeDataManager:
-    """Real-time data manager for live market information"""
+    """Real-time data manager for live market information using FREE sources only"""
     
     def __init__(self):
         self.config = Config()
         self.logger = logging.getLogger(__name__)
         self.session = requests.Session()
+        
+        # Rotate user agents to avoid being blocked
+        self.current_user_agent = random.choice(self.config.USER_AGENTS)
         self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': self.current_user_agent,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
         })
         
-        # Rate limiting
-        self.last_api_calls = {}
+        # Rate limiting for free sources
+        self.last_request_time = {}
+        self.request_count = {}
+        
+        # Cache system
         self.cache = {}
         self.cache_timestamps = {}
         
@@ -34,27 +47,19 @@ class RealTimeDataManager:
         self.uk_tz = pytz.timezone('Europe/London')
         
     def get_live_market_data(self, symbol: str, interval: str = '1m', period: str = '1d') -> pd.DataFrame:
-        """Get live market data from multiple sources"""
+        """Get live market data from FREE sources (no API key needed)"""
         try:
             # Check cache first
             cache_key = f"{symbol}_{interval}_{period}"
             if self._is_cache_valid(cache_key):
                 return self.cache[cache_key]
             
-            # Try multiple data sources
-            data = None
+            # Try Yahoo Finance first (primary free source)
+            data = self._get_yahoo_finance_data(symbol, interval, period)
             
-            # Source 1: Yahoo Finance (most reliable for live data)
-            if self.config.YAHOO_FINANCE_ENABLED:
-                data = self._get_yahoo_finance_data(symbol, interval, period)
-            
-            # Source 2: Alpha Vantage (if Yahoo fails)
+            # If Yahoo Finance fails, try web scraping as backup
             if data is None or data.empty:
-                data = self._get_alpha_vantage_data(symbol, interval, period)
-            
-            # Source 3: Polygon (if others fail)
-            if data is None or data.empty:
-                data = self._get_polygon_data(symbol, interval, period)
+                data = self._get_web_scraped_data(symbol)
             
             # Validate data
             if data is not None and not data.empty:
@@ -65,7 +70,7 @@ class RealTimeDataManager:
                 
                 return data
             
-            self.logger.error(f"Failed to get live data for {symbol} from all sources")
+            self.logger.error(f"Failed to get live data for {symbol} from free sources")
             return pd.DataFrame()
             
         except Exception as e:
@@ -73,7 +78,7 @@ class RealTimeDataManager:
             return pd.DataFrame()
     
     def get_live_price(self, symbol: str) -> Optional[float]:
-        """Get current live price for a symbol"""
+        """Get current live price for a symbol from free sources"""
         try:
             # Get latest data
             data = self.get_live_market_data(symbol, interval='1m', period='1d')
@@ -88,7 +93,7 @@ class RealTimeDataManager:
             return None
     
     def get_live_market_status(self) -> Dict:
-        """Get live UK market status"""
+        """Get live UK market status using free time checking"""
         try:
             now = datetime.now(self.uk_tz)
             current_time = now.strftime('%H:%M')
@@ -118,15 +123,16 @@ class RealTimeDataManager:
                 'time_to_close': time_to_close,
                 'status': 'OPEN' if is_open else 'CLOSED',
                 'timestamp': now.isoformat(),
-                'timezone': 'Europe/London'
+                'timezone': 'Europe/London',
+                'data_source': 'free_time_check'
             }
             
         except Exception as e:
             self.logger.error(f"Error getting live market status: {str(e)}")
-            return {'is_open': False, 'status': 'UNKNOWN'}
+            return {'is_open': False, 'status': 'UNKNOWN', 'data_source': 'free_time_check'}
     
     def get_live_news_sentiment(self, symbol: str = None, category: str = 'business') -> Dict:
-        """Get live financial news sentiment from real sources"""
+        """Get live financial news sentiment from FREE public sources"""
         try:
             news_data = {
                 'overall_sentiment': 'NEUTRAL',
@@ -136,26 +142,20 @@ class RealTimeDataManager:
                 'key_headlines': [],
                 'sector_sentiment': {},
                 'timestamp': datetime.now().isoformat(),
-                'data_source': 'real_time'
+                'data_source': 'free_public_sources'
             }
             
-            # Source 1: NewsAPI (if available)
-            if self.config.NEWS_API_KEY:
-                api_news = self._get_newsapi_data(symbol, category)
-                if api_news:
-                    news_data.update(api_news)
-            
-            # Source 2: Finnhub (if available)
-            if self.config.FINNHUB_API_KEY:
-                finnhub_news = self._get_finnhub_news(symbol)
-                if finnhub_news:
-                    news_data.update(finnhub_news)
-            
-            # Source 3: Alpha Vantage News (if available)
-            if self.config.ALPHA_VANTAGE_API_KEY:
-                av_news = self._get_alpha_vantage_news(symbol)
-                if av_news:
-                    news_data.update(av_news)
+            # Get news from free public sources
+            if symbol:
+                # Get symbol-specific news
+                symbol_news = self._get_symbol_news_from_free_sources(symbol)
+                if symbol_news:
+                    news_data.update(symbol_news)
+            else:
+                # Get general market news
+                general_news = self._get_general_news_from_free_sources()
+                if general_news:
+                    news_data.update(general_news)
             
             # Calculate overall sentiment from real data
             if news_data['bullish_news'] > 0 or news_data['bearish_news'] > 0:
@@ -175,7 +175,7 @@ class RealTimeDataManager:
             
         except Exception as e:
             self.logger.error(f"Error getting live news sentiment: {str(e)}")
-            return {'overall_sentiment': 'NEUTRAL', 'data_source': 'real_time'}
+            return {'overall_sentiment': 'NEUTRAL', 'data_source': 'free_public_sources'}
     
     def get_live_technical_indicators(self, symbol: str) -> Dict:
         """Get live technical indicators from real market data"""
@@ -283,15 +283,15 @@ class RealTimeDataManager:
                 'sentiment_score': avg_sentiment,
                 'indices_analyzed': len(sentiment_scores),
                 'timestamp': datetime.now().isoformat(),
-                'data_source': 'real_time'
+                'data_source': 'free_yahoo_finance'
             }
             
         except Exception as e:
             self.logger.error(f"Error getting live market sentiment: {str(e)}")
-            return {'overall_sentiment': 'NEUTRAL', 'data_source': 'real_time'}
+            return {'overall_sentiment': 'NEUTRAL', 'data_source': 'free_yahoo_finance'}
     
     def _get_yahoo_finance_data(self, symbol: str, interval: str, period: str) -> pd.DataFrame:
-        """Get data from Yahoo Finance (most reliable for live data)"""
+        """Get data from Yahoo Finance (FREE - no API key needed)"""
         try:
             if self._check_rate_limit('yahoo_finance'):
                 ticker = yf.Ticker(symbol)
@@ -300,6 +300,10 @@ class RealTimeDataManager:
                 if not data.empty:
                     # Standardize column names
                     data.columns = [col.title() for col in data.columns]
+                    
+                    # Update rate limit
+                    self._update_rate_limit('yahoo_finance')
+                    
                     return data
                 
         except Exception as e:
@@ -307,290 +311,187 @@ class RealTimeDataManager:
         
         return pd.DataFrame()
     
-    def _get_alpha_vantage_data(self, symbol: str, interval: str, period: str) -> pd.DataFrame:
-        """Get data from Alpha Vantage API"""
+    def _get_web_scraped_data(self, symbol: str) -> pd.DataFrame:
+        """Get data from web scraping public financial sites (FREE backup)"""
         try:
-            if not self.config.ALPHA_VANTAGE_API_KEY:
+            if not self._check_rate_limit('web_scraping'):
                 return pd.DataFrame()
             
-            if not self._check_rate_limit('alpha_vantage'):
-                return pd.DataFrame()
+            # Try to get data from public financial websites
+            # This is a backup method when Yahoo Finance fails
             
-            # Map intervals to Alpha Vantage format
-            interval_map = {'1m': '1min', '5m': '5min', '15m': '15min', '30m': '30min', '1h': '60min', '1d': 'daily'}
-            av_interval = interval_map.get(interval, 'daily')
+            # For now, return empty DataFrame as web scraping requires more complex implementation
+            # In a full implementation, you could scrape from sites like:
+            # - MarketWatch
+            # - Investing.com
+            # - Yahoo Finance HTML (as backup)
             
-            if av_interval == 'daily':
-                url = f"https://www.alphavantage.co/query"
-                params = {
-                    'function': 'TIME_SERIES_DAILY',
-                    'symbol': symbol,
-                    'apikey': self.config.ALPHA_VANTAGE_API_KEY,
-                    'outputsize': 'compact'
-                }
-            else:
-                url = f"https://www.alphavantage.co/query"
-                params = {
-                    'function': 'TIME_SERIES_INTRADAY',
-                    'symbol': symbol,
-                    'interval': av_interval,
-                    'apikey': self.config.ALPHA_VANTAGE_API_KEY,
-                    'outputsize': 'compact'
-                }
-            
-            response = self.session.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            # Parse Alpha Vantage response
-            if 'Time Series (Daily)' in data:
-                time_series = data['Time Series (Daily)']
-            elif 'Time Series (1min)' in data:
-                time_series = data['Time Series (1min)']
-            elif 'Time Series (5min)' in data:
-                time_series = data['Time Series (5min)']
-            else:
-                return pd.DataFrame()
-            
-            # Convert to DataFrame
-            df_data = []
-            for timestamp, values in time_series.items():
-                df_data.append({
-                    'Date': pd.to_datetime(timestamp),
-                    'Open': float(values['1. open']),
-                    'High': float(values['2. high']),
-                    'Low': float(values['3. low']),
-                    'Close': float(values['4. close']),
-                    'Volume': int(values['5. volume'])
-                })
-            
-            df = pd.DataFrame(df_data)
-            df.set_index('Date', inplace=True)
-            df.sort_index(inplace=True)
-            
-            self._update_rate_limit('alpha_vantage')
-            return df
+            self.logger.info(f"Web scraping backup not fully implemented for {symbol}")
+            return pd.DataFrame()
             
         except Exception as e:
-            self.logger.warning(f"Alpha Vantage failed for {symbol}: {str(e)}")
+            self.logger.warning(f"Web scraping failed for {symbol}: {str(e)}")
             return pd.DataFrame()
     
-    def _get_polygon_data(self, symbol: str, interval: str, period: str) -> pd.DataFrame:
-        """Get data from Polygon API"""
+    def _get_symbol_news_from_free_sources(self, symbol: str) -> Dict:
+        """Get symbol-specific news from free public sources"""
         try:
-            if not self.config.POLYGON_API_KEY:
-                return pd.DataFrame()
+            # Try to get news from Yahoo Finance (free)
+            yahoo_news = self._get_yahoo_finance_news(symbol)
+            if yahoo_news:
+                return yahoo_news
             
-            if not self._check_rate_limit('polygon'):
-                return pd.DataFrame()
-            
-            # Calculate date range
-            end_date = datetime.now()
-            if period == '1d':
-                start_date = end_date - timedelta(days=1)
-            elif period == '5d':
-                start_date = end_date - timedelta(days=5)
-            elif period == '1mo':
-                start_date = end_date - timedelta(days=30)
-            else:
-                start_date = end_date - timedelta(days=1)
-            
-            # Map intervals to Polygon format
-            interval_map = {'1m': '1', '5m': '5', '15m': '15', '30m': '30', '1h': '60', '1d': 'D'}
-            poly_interval = interval_map.get(interval, '1')
-            
-            url = f"https://api.polygon.io/v2/aggs/ticker/{symbol}/range/{poly_interval}/{poly_interval}/{start_date.strftime('%Y-%m-%d')}/{end_date.strftime('%Y-%m-%d')}"
-            
-            params = {'apikey': self.config.POLYGON_API_KEY}
-            response = self.session.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            if 'results' not in data:
-                return pd.DataFrame()
-            
-            # Convert to DataFrame
-            df_data = []
-            for result in data['results']:
-                df_data.append({
-                    'Date': pd.to_datetime(result['t'], unit='ms'),
-                    'Open': result['o'],
-                    'High': result['h'],
-                    'Low': result['l'],
-                    'Close': result['c'],
-                    'Volume': result['v']
-                })
-            
-            df = pd.DataFrame(df_data)
-            df.set_index('Date', inplace=True)
-            df.sort_index(inplace=True)
-            
-            self._update_rate_limit('polygon')
-            return df
+            # If Yahoo Finance fails, try web scraping from public sites
+            return self._scrape_news_from_public_sites(symbol)
             
         except Exception as e:
-            self.logger.warning(f"Polygon failed for {symbol}: {str(e)}")
-            return pd.DataFrame()
+            self.logger.error(f"Error getting symbol news from free sources: {str(e)}")
+            return {}
     
-    def _get_newsapi_data(self, symbol: str, category: str) -> Dict:
-        """Get news from NewsAPI"""
+    def _get_general_news_from_free_sources(self) -> Dict:
+        """Get general market news from free public sources"""
         try:
-            if not self.config.NEWS_API_KEY:
+            # Try to get news from multiple free sources
+            all_news = {}
+            
+            # Yahoo Finance news
+            yahoo_news = self._get_yahoo_finance_general_news()
+            if yahoo_news:
+                all_news.update(yahoo_news)
+            
+            # Web scraped news from public sites
+            scraped_news = self._scrape_general_news_from_public_sites()
+            if scraped_news:
+                all_news.update(scraped_news)
+            
+            return all_news
+            
+        except Exception as e:
+            self.logger.error(f"Error getting general news from free sources: {str(e)}")
+            return {}
+    
+    def _get_yahoo_finance_news(self, symbol: str) -> Dict:
+        """Get news from Yahoo Finance (FREE)"""
+        try:
+            if not self._check_rate_limit('web_scraping'):
                 return {}
             
-            # Build query
-            query = f"finance {category}"
-            if symbol:
-                query += f" {symbol}"
+            # Yahoo Finance news URL
+            news_url = f"https://finance.yahoo.com/quote/{symbol}/news"
             
-            url = "https://newsapi.org/v2/everything"
-            params = {
-                'q': query,
-                'language': 'en',
-                'sortBy': 'publishedAt',
-                'pageSize': 20,
-                'apiKey': self.config.NEWS_API_KEY
-            }
-            
-            response = self.session.get(url, params=params, timeout=10)
+            response = self.session.get(news_url, timeout=10)
             response.raise_for_status()
             
-            data = response.json()
+            # Parse HTML for news headlines
+            soup = BeautifulSoup(response.content, 'html.parser')
             
-            if 'articles' not in data:
-                return {}
-            
-            # Analyze sentiment from real headlines
+            # Look for news headlines (this is a simplified approach)
             headlines = []
             sentiment_counts = {'bullish': 0, 'bearish': 0, 'neutral': 0}
             
-            for article in data['articles'][:10]:
-                headline = article.get('title', '')
-                headlines.append(headline)
-                
-                # Simple sentiment analysis on real headlines
-                sentiment = self._analyze_headline_sentiment(headline)
-                sentiment_counts[sentiment] += 1
+            # Find news elements (this would need to be adapted based on Yahoo's current HTML structure)
+            news_elements = soup.find_all(['h3', 'h4', 'a'], class_=lambda x: x and 'news' in x.lower() if x else False)
+            
+            for element in news_elements[:10]:  # Limit to 10 headlines
+                headline = element.get_text(strip=True)
+                if headline and len(headline) > 10:
+                    headlines.append(headline)
+                    
+                    # Analyze sentiment
+                    sentiment = self._analyze_headline_sentiment(headline)
+                    sentiment_counts[sentiment] += 1
+            
+            self._update_rate_limit('web_scraping')
             
             return {
                 'bullish_news': sentiment_counts['bullish'],
                 'bearish_news': sentiment_counts['bearish'],
                 'neutral_news': sentiment_counts['neutral'],
-                'key_headlines': headlines[:5]
+                'key_headlines': headlines[:5],
+                'data_source': 'free_yahoo_finance'
             }
             
         except Exception as e:
-            self.logger.warning(f"NewsAPI failed: {str(e)}")
+            self.logger.warning(f"Yahoo Finance news failed for {symbol}: {str(e)}")
             return {}
     
-    def _get_finnhub_news(self, symbol: str) -> Dict:
-        """Get news from Finnhub"""
+    def _get_yahoo_finance_general_news(self) -> Dict:
+        """Get general market news from Yahoo Finance (FREE)"""
         try:
-            if not self.config.FINNHUB_API_KEY:
+            if not self._check_rate_limit('web_scraping'):
                 return {}
             
-            # Get company news
-            if symbol:
-                url = f"https://finnhub.io/api/v1/company-news"
-                params = {
-                    'symbol': symbol,
-                    'from': (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'),
-                    'to': datetime.now().strftime('%Y-%m-%d'),
-                    'token': self.config.FINNHUB_API_KEY
-                }
-            else:
-                # Get general market news
-                url = f"https://finnhub.io/api/v1/news"
-                params = {
-                    'category': 'general',
-                    'token': self.config.FINNHUB_API_KEY
-                }
+            # Yahoo Finance general news URL
+            news_url = "https://finance.yahoo.com/news/"
             
-            response = self.session.get(url, params=params, timeout=10)
+            response = self.session.get(news_url, timeout=10)
             response.raise_for_status()
             
-            data = response.json()
+            # Parse HTML for news headlines
+            soup = BeautifulSoup(response.content, 'html.parser')
             
-            if not data:
-                return {}
-            
-            # Analyze real news sentiment
             headlines = []
             sentiment_counts = {'bullish': 0, 'bearish': 0, 'neutral': 0}
             
-            for article in data[:10]:
-                headline = article.get('headline', '')
-                headlines.append(headline)
-                
-                sentiment = self._analyze_headline_sentiment(headline)
-                sentiment_counts[sentiment] += 1
+            # Find news elements (simplified approach)
+            news_elements = soup.find_all(['h3', 'h4', 'a'], class_=lambda x: x and 'news' in x.lower() if x else False)
+            
+            for element in news_elements[:15]:  # Limit to 15 headlines
+                headline = element.get_text(strip=True)
+                if headline and len(headline) > 10:
+                    headlines.append(headline)
+                    
+                    # Analyze sentiment
+                    sentiment = self._analyze_headline_sentiment(headline)
+                    sentiment_counts[sentiment] += 1
+            
+            self._update_rate_limit('web_scraping')
             
             return {
                 'bullish_news': sentiment_counts['bullish'],
                 'bearish_news': sentiment_counts['bearish'],
                 'neutral_news': sentiment_counts['neutral'],
-                'key_headlines': headlines[:5]
+                'key_headlines': headlines[:5],
+                'data_source': 'free_yahoo_finance'
             }
             
         except Exception as e:
-            self.logger.warning(f"Finnhub failed: {str(e)}")
+            self.logger.warning(f"Yahoo Finance general news failed: {str(e)}")
             return {}
     
-    def _get_alpha_vantage_news(self, symbol: str) -> Dict:
-        """Get news from Alpha Vantage News API"""
+    def _scrape_news_from_public_sites(self, symbol: str) -> Dict:
+        """Scrape news from public financial sites (FREE)"""
         try:
-            if not self.config.ALPHA_VANTAGE_API_KEY:
+            if not self._check_rate_limit('web_scraping'):
                 return {}
             
-            url = "https://www.alphavantage.co/query"
-            params = {
-                'function': 'NEWS_SENTIMENT',
-                'tickers': symbol if symbol else 'FOREX',
-                'apikey': self.config.ALPHA_VANTAGE_API_KEY,
-                'limit': 10
-            }
+            # This is a placeholder for more sophisticated web scraping
+            # In a full implementation, you could scrape from:
+            # - Reuters
+            # - Bloomberg
+            # - MarketWatch
+            # - Investing.com
             
-            response = self.session.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            if 'feed' not in data:
-                return {}
-            
-            # Use real sentiment scores from Alpha Vantage
-            headlines = []
-            sentiment_scores = []
-            
-            for article in data['feed'][:10]:
-                headline = article.get('title', '')
-                headlines.append(headline)
-                
-                # Get real sentiment score if available
-                sentiment_score = article.get('overall_sentiment_score', 0)
-                sentiment_scores.append(sentiment_score)
-            
-            # Calculate sentiment from real scores
-            if sentiment_scores:
-                avg_score = np.mean(sentiment_scores)
-                if avg_score > 0.1:
-                    overall_sentiment = 'BULLISH'
-                elif avg_score < -0.1:
-                    overall_sentiment = 'BEARISH'
-                else:
-                    overall_sentiment = 'NEUTRAL'
-            else:
-                overall_sentiment = 'NEUTRAL'
-            
-            return {
-                'overall_sentiment': overall_sentiment,
-                'key_headlines': headlines[:5]
-            }
+            # For now, return empty to avoid being blocked
+            return {}
             
         except Exception as e:
-            self.logger.warning(f"Alpha Vantage News failed: {str(e)}")
+            self.logger.warning(f"News scraping failed for {symbol}: {str(e)}")
+            return {}
+    
+    def _scrape_general_news_from_public_sites(self) -> Dict:
+        """Scrape general news from public financial sites (FREE)"""
+        try:
+            if not self._check_rate_limit('web_scraping'):
+                return {}
+            
+            # This is a placeholder for more sophisticated web scraping
+            # In a full implementation, you could scrape from multiple public sites
+            
+            return {}
+            
+        except Exception as e:
+            self.logger.warning(f"General news scraping failed: {str(e)}")
             return {}
     
     def _analyze_headline_sentiment(self, headline: str) -> str:
@@ -747,31 +648,35 @@ class RealTimeDataManager:
             self.logger.error(f"Error validating data for {symbol}: {str(e)}")
             return data
     
-    def _check_rate_limit(self, api_name: str) -> bool:
-        """Check if API rate limit allows request"""
+    def _check_rate_limit(self, source_name: str) -> bool:
+        """Check if free data source rate limit allows request"""
         try:
-            if api_name not in self.last_api_calls:
+            if source_name not in self.last_request_time:
                 return True
             
-            rate_limit = self.config.RATE_LIMITS.get(api_name, 60)
-            last_call = self.last_api_calls[api_name]
+            limits = self.config.FREE_DATA_LIMITS.get(source_name, {})
+            requests_per_minute = limits.get('requests_per_minute', 60)
+            delay_between_requests = limits.get('delay_between_requests', 1)
             
-            # Allow request if enough time has passed
-            if time.time() - last_call >= (60 / rate_limit):
+            current_time = time.time()
+            last_request = self.last_request_time[source_name]
+            
+            # Check if enough time has passed
+            if current_time - last_request >= delay_between_requests:
                 return True
             
             return False
             
         except Exception as e:
-            self.logger.error(f"Error checking rate limit for {api_name}: {str(e)}")
+            self.logger.error(f"Error checking rate limit for {source_name}: {str(e)}")
             return True
     
-    def _update_rate_limit(self, api_name: str):
-        """Update API rate limit timestamp"""
+    def _update_rate_limit(self, source_name: str):
+        """Update free data source rate limit timestamp"""
         try:
-            self.last_api_calls[api_name] = time.time()
+            self.last_request_time[source_name] = time.time()
         except Exception as e:
-            self.logger.error(f"Error updating rate limit for {api_name}: {str(e)}")
+            self.logger.error(f"Error updating rate limit for {source_name}: {str(e)}")
     
     def _is_cache_valid(self, cache_key: str) -> bool:
         """Check if cached data is still valid"""
