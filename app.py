@@ -616,6 +616,29 @@ def get_trading_recommendations():
         app.logger.error(f"Error getting trading recommendations: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/advisor/trading-picks')
+def get_trading_picks():
+    """Get comprehensive trading picks for Trading212 CFD"""
+    try:
+        capital = float(request.args.get('capital', 147.0))
+        
+        if capital <= 0:
+            return jsonify({'error': 'Capital must be greater than 0'}), 400
+        
+        picks = financial_advisor.get_trading_picks(capital)
+        
+        if not picks:
+            return jsonify({'error': 'Failed to generate trading picks'}), 500
+        
+        return jsonify({
+            'picks': picks,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting trading picks: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/advisor/uk-market-status')
 def get_uk_market_status():
     """Get UK market open/close status"""

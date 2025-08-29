@@ -38,7 +38,7 @@ class FinancialAdvisor:
             'us_indices': ['^GSPC', '^DJI', '^IXIC'],
             'european_indices': ['^GDAXI', '^FCHI', '^FTMIB', '^IBEX', '^AEX'],
             'forex': ['GBPUSD=X', 'EURUSD=X', 'USDJPY=X', 'EURGBP=X', 'GBPEUR=X'],
-            'commodities': ['GC=F', 'SI=F', 'CL=F', 'BZ=F', 'HG=F', 'NG=F']
+            'commodities': ['GC=F', 'SI=F', 'CL=F', 'BRENT/USD']
         }
         
         # Risk management settings
@@ -53,6 +53,343 @@ class FinancialAdvisor:
                 'close': '16:30'
             }
         }
+    
+    def get_trading_picks(self, capital: float = 147.0) -> List[Dict]:
+        """Get trading picks in the exact format requested with star ratings"""
+        try:
+            self.logger.info(f"Generating trading picks for £{capital} capital...")
+            
+            # Analyze market conditions
+            market_conditions = self.analyze_market_conditions()
+            
+            # Get available instruments
+            available_instruments = self._get_available_instruments()
+            
+            # Generate trading picks for major instruments
+            trading_picks = []
+            
+            # Focus on major indices and liquid instruments
+            major_instruments = [
+                '^IXIC', '^GSPC', '^DJI', '^FTSE', '^GDAXI', '^FCHI',
+                'AAPL', 'MSFT', 'TSLA', 'NVDA', 'VOD.L', 'HSBA.L'
+            ]
+            
+            for symbol in major_instruments:
+                try:
+                    # Get real-time market data
+                    data = self.real_time_data.get_live_market_data(symbol, period='1d', interval='5m')
+                    if data.empty:
+                        continue
+                    
+                    # Get CFD setup analysis
+                    cfd_setup = self.cfd_analyzer.analyze_cfd_setups(data, 'index' if '^' in symbol else 'stock')
+                    if not cfd_setup:
+                        continue
+                    
+                    # Get real-time news sentiment for this instrument
+                    news_sentiment = self._get_instrument_news_sentiment(symbol)
+                    
+                    # Get real-time technical analysis
+                    technical_analysis = self._analyze_instrument_technical(symbol, data)
+                    
+                    # Generate trading pick in the exact format requested
+                    trading_pick = self._generate_trading_pick_format(
+                        symbol, data, cfd_setup, news_sentiment, technical_analysis, capital
+                    )
+                    
+                    if trading_pick:
+                        trading_picks.append(trading_pick)
+                        
+                except Exception as e:
+                    self.logger.warning(f"Error analyzing {symbol}: {str(e)}")
+                    continue
+            
+            # Sort by likelihood of execution (star rating)
+            trading_picks.sort(key=lambda x: x['likelihood_stars'], reverse=True)
+            
+            return trading_picks
+            
+        except Exception as e:
+            self.logger.error(f"Error getting trading picks: {str(e)}")
+            return []
+    
+    def _generate_trading_pick_format(self, symbol: str, data: pd.DataFrame, cfd_setup: Dict, 
+                                    news_sentiment: Dict, technical_analysis: Dict, capital: float) -> Dict:
+        """Generate trading pick in the exact format requested"""
+        try:
+            # Determine instrument name
+            instrument_name = self._get_instrument_display_name(symbol)
+            
+            # Determine setup type and direction
+            setup_type, trigger_description = self._generate_setup_type_and_trigger(symbol, data, cfd_setup, technical_analysis)
+            
+            # Calculate stop guide and target guide
+            stop_guide, target_guide = self._calculate_stop_and_target_guides(symbol, data, cfd_setup)
+            
+            # Calculate likelihood of execution today
+            likelihood_stars, likelihood_text, notes = self._calculate_likelihood_of_execution(
+                symbol, data, cfd_setup, news_sentiment, technical_analysis, market_conditions
+            )
+            
+            # Create trading pick in exact format
+            trading_pick = {
+                'instrument': instrument_name,
+                'setup_type': setup_type,
+                'trigger_description': trigger_description,
+                'stop_guide': stop_guide,
+                'target_guide': target_guide,
+                'likelihood_stars': likelihood_stars,
+                'likelihood_text': likelihood_text,
+                'notes': notes,
+                'symbol': symbol,
+                'direction': cfd_setup.get('direction', 'neutral'),
+                'confidence': cfd_setup.get('confidence', 0),
+                'data_source': 'free_real_time',
+                'last_updated': datetime.now().isoformat()
+            }
+            
+            return trading_pick
+            
+        except Exception as e:
+            self.logger.error(f"Error generating trading pick format for {symbol}: {str(e)}")
+            return None
+    
+    def _get_instrument_display_name(self, symbol: str) -> str:
+        """Get human-readable instrument name"""
+        instrument_names = {
+            '^IXIC': 'US100 (Nasdaq-100)',
+            '^GSPC': 'US500 (S&P 500)',
+            '^DJI': 'US30 (Dow Jones)',
+            '^FTSE': 'UK100 (FTSE 100)',
+            '^GDAXI': 'DE30 (DAX)',
+            '^FCHI': 'FR40 (CAC 40)',
+            'AAPL': 'AAPL (Apple Inc.)',
+            'MSFT': 'MSFT (Microsoft Corp.)',
+            'TSLA': 'TSLA (Tesla Inc.)',
+            'NVDA': 'NVDA (NVIDIA Corp.)',
+            'VOD.L': 'VOD.L (Vodafone Group)',
+            'HSBA.L': 'HSBA.L (HSBC Holdings)'
+        }
+        
+        return instrument_names.get(symbol, symbol)
+    
+    def _generate_setup_type_and_trigger(self, symbol: str, data: pd.DataFrame, 
+                                       cfd_setup: Dict, technical_analysis: Dict) -> Tuple[str, str]:
+        """Generate setup type and trigger description"""
+        try:
+            direction = cfd_setup.get('direction', 'neutral')
+            current_price = data['Close'].iloc[-1]
+            open_price = data['Open'].iloc[0]
+            
+            # Determine if it's a continuation or breakout setup
+            if '^' in symbol:  # Index
+                if direction == 'short':
+                    if current_price < open_price:
+                        setup_type = "Short continuation"
+                        trigger_description = "Price drops below NY open, then retests and fails — all before close"
+                    else:
+                        setup_type = "Short reversal"
+                        trigger_description = "Price fails to hold above open, breaks down and continues lower — intraday"
+                else:  # long
+                    if current_price > open_price:
+                        setup_type = "Long continuation"
+                        trigger_description = "Price holds above open, breaks higher and continues — intraday"
+                    else:
+                        setup_type = "Long breakout"
+                        trigger_description = "Breaks and holds above pre-market high, then pullback entry — all intra-day"
+            else:  # Stock
+                if direction == 'short':
+                    setup_type = "Short continuation"
+                    trigger_description = "Price breaks below key support, retests and fails — complete before close"
+                else:  # long
+                    setup_type = "Long breakout"
+                    trigger_description = "Breaks above resistance with volume, pullback entry — finish intraday"
+            
+            return setup_type, trigger_description
+            
+        except Exception as e:
+            self.logger.error(f"Error generating setup type and trigger: {str(e)}")
+            return "Either side", "Break or reject open, then trade back (either direction) — all intraday"
+    
+    def _calculate_stop_and_target_guides(self, symbol: str, data: pd.DataFrame, cfd_setup: Dict) -> Tuple[str, str]:
+        """Calculate stop guide and target guide"""
+        try:
+            current_price = data['Close'].iloc[-1]
+            atr = self._calculate_atr(data, 14)
+            
+            if '^IXIC' in symbol:  # Nasdaq-100
+                stop_guide = f"~{int(atr * 0.5)}–{int(atr * 0.7)} pts"
+                target_guide = "1–1.5 × risk"
+            elif '^GSPC' in symbol:  # S&P 500
+                stop_guide = f"~{int(atr * 0.3)}–{int(atr * 0.5)} pts"
+                target_guide = "1–2 × risk"
+            elif '^DJI' in symbol:  # Dow Jones
+                stop_guide = f"~{int(atr * 0.8)}–{int(atr * 1.2)} pts"
+                target_guide = "1–1.5 × risk"
+            elif '^' in symbol:  # Other indices
+                stop_guide = f"~{int(atr * 0.4)}–{int(atr * 0.6)} pts"
+                target_guide = "1–1.5 × risk"
+            else:  # Stocks
+                stop_guide = f"~{current_price * 0.02:.2f}–{current_price * 0.03:.2f}"
+                target_guide = "1.5–2 × risk"
+            
+            return stop_guide, target_guide
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating stop and target guides: {str(e)}")
+            return "~2–3%", "1.5 × risk"
+    
+    def _calculate_likelihood_of_execution(self, symbol: str, data: pd.DataFrame, cfd_setup: Dict,
+                                         news_sentiment: Dict, technical_analysis: Dict, market_conditions: Dict) -> Tuple[int, str, str]:
+        """Calculate likelihood of execution today with star rating"""
+        try:
+            # Base likelihood factors
+            confidence = cfd_setup.get('confidence', 0)
+            direction = cfd_setup.get('direction', 'neutral')
+            
+            # Market conditions factor
+            market_sentiment = market_conditions.get('global_sentiment', {}).get('overall_sentiment', 'NEUTRAL')
+            uk_market_status = market_conditions.get('uk_market_status', {}).get('is_open', False)
+            
+            # Technical analysis factor
+            tech_score = technical_analysis.get('technical_score', 0.5)
+            volume_ratio = technical_analysis.get('volume_ratio', 1.0)
+            
+            # News sentiment factor
+            news_sent = news_sentiment.get('overall_sentiment', 'NEUTRAL')
+            
+            # Calculate likelihood score (0-100)
+            likelihood_score = 0
+            
+            # Confidence contribution (40%)
+            likelihood_score += confidence * 40
+            
+            # Market sentiment alignment (20%)
+            if (direction == 'long' and market_sentiment == 'BULLISH') or \
+               (direction == 'short' and market_sentiment == 'BEARISH'):
+                likelihood_score += 20
+            elif market_sentiment == 'NEUTRAL':
+                likelihood_score += 10
+            
+            # Technical score contribution (20%)
+            likelihood_score += tech_score * 20
+            
+            # Volume confirmation (10%)
+            if volume_ratio > 1.5:
+                likelihood_score += 10
+            elif volume_ratio > 1.0:
+                likelihood_score += 5
+            
+            # News sentiment alignment (10%)
+            if (direction == 'long' and news_sent == 'BULLISH') or \
+               (direction == 'short' and news_sent == 'BEARISH'):
+                likelihood_score += 10
+            elif news_sent == 'NEUTRAL':
+                likelihood_score += 5
+            
+            # UK market status bonus
+            if uk_market_status:
+                likelihood_score += 5
+            
+            # Convert to star rating (1-5)
+            if likelihood_score >= 90:
+                stars = 5
+                likelihood_text = "★★★★★ Very High"
+            elif likelihood_score >= 75:
+                stars = 4
+                likelihood_text = "★★★★☆ High"
+            elif likelihood_score >= 60:
+                stars = 3
+                likelihood_text = "★★★☆☆ Medium–High"
+            elif likelihood_score >= 45:
+                stars = 2
+                likelihood_text = "★★☆☆☆ Low–Medium"
+            else:
+                stars = 1
+                likelihood_text = "★☆☆☆☆ Low"
+            
+            # Generate notes based on likelihood factors
+            notes = self._generate_execution_notes(symbol, direction, confidence, market_sentiment, 
+                                                 tech_score, volume_ratio, news_sent, uk_market_status)
+            
+            return stars, likelihood_text, notes
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating likelihood of execution: {str(e)}")
+            return 3, "★★★☆☆ Medium", "Standard execution probability based on market conditions"
+    
+    def _generate_execution_notes(self, symbol: str, direction: str, confidence: float, 
+                                market_sentiment: str, tech_score: float, volume_ratio: float, 
+                                news_sent: str, uk_market_status: bool) -> str:
+        """Generate execution notes based on likelihood factors"""
+        try:
+            notes_parts = []
+            
+            # Index-specific notes
+            if '^IXIC' in symbol:  # Nasdaq-100
+                if direction == 'short':
+                    notes_parts.append("High early activity gives strong odds of fill and swing continuation during U.S. hours.")
+                else:  # long
+                    notes_parts.append("If bullish reversal emerges, likely trigger and resolution during day. Less probable than short.")
+            elif '^GSPC' in symbol:  # S&P 500
+                if direction == 'short':
+                    notes_parts.append("Smoother moves, good liquidity. Likely to execute and resolve before market closes.")
+                else:  # long
+                    notes_parts.append("Needs sentiment flip, could happen but moderate chance to complete in time.")
+            elif '^DJI' in symbol:  # Dow Jones
+                notes_parts.append("Moves slower and less volatile. Execution and full swing less likely in the tighter timeframe.")
+            elif '^' in symbol:  # Other indices
+                if direction == 'short':
+                    notes_parts.append("Index volatility provides good execution opportunities during active hours.")
+                else:
+                    notes_parts.append("Index momentum needed for successful execution and completion.")
+            else:  # Stocks
+                if volume_ratio > 1.5:
+                    notes_parts.append("High volume confirms setup validity and increases execution probability.")
+                else:
+                    notes_parts.append("Standard execution probability based on market conditions.")
+            
+            # Add general notes
+            if confidence > 0.8:
+                notes_parts.append("High confidence setup with clear technical signals.")
+            elif confidence > 0.6:
+                notes_parts.append("Good confidence setup with moderate technical confirmation.")
+            else:
+                notes_parts.append("Moderate confidence setup requiring careful execution.")
+            
+            if tech_score > 0.7:
+                notes_parts.append("Strong technical indicators support execution.")
+            elif tech_score < 0.3:
+                notes_parts.append("Weak technical indicators may reduce execution probability.")
+            
+            if not uk_market_status:
+                notes_parts.append("UK market closed - execution limited to other sessions.")
+            
+            return " ".join(notes_parts)
+            
+        except Exception as e:
+            self.logger.error(f"Error generating execution notes: {str(e)}")
+            return "Standard execution probability based on market conditions"
+    
+    def _calculate_atr(self, data: pd.DataFrame, period: int = 14) -> float:
+        """Calculate Average True Range"""
+        try:
+            high = data['High']
+            low = data['Low']
+            close = data['Close']
+            
+            tr1 = high - low
+            tr2 = abs(high - close.shift())
+            tr3 = abs(low - close.shift())
+            
+            tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+            atr = tr.rolling(window=period).mean().iloc[-1]
+            
+            return atr if not pd.isna(atr) else 1.0
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating ATR: {str(e)}")
+            return 1.0
     
     def analyze_market_conditions(self) -> Dict:
         """Analyze overall market conditions using real-time data"""
@@ -81,88 +418,20 @@ class FinancialAdvisor:
         try:
             self.logger.info(f"Generating real-time trading recommendations for £{capital} capital...")
             
+            # Get trading picks in the new format
+            trading_picks = self.get_trading_picks(capital)
+            
             # Analyze market conditions
             market_conditions = self.analyze_market_conditions()
-            
-            # Get available instruments
-            available_instruments = self._get_available_instruments()
-            
-            # Analyze each instrument with real-time data
-            recommendations = []
-            
-            for instrument_type, symbols in available_instruments.items():
-                for symbol in symbols[:10]:  # Limit to top 10 per type for performance
-                    try:
-                        # Get real-time market data
-                        data = self.real_time_data.get_live_market_data(symbol, period='1d', interval='5m')
-                        if data.empty:
-                            continue
-                        
-                        # Get CFD setup analysis
-                        cfd_setup = self.cfd_analyzer.analyze_cfd_setups(data, instrument_type)
-                        if not cfd_setup:
-                            continue
-                        
-                        # Get real-time news sentiment for this instrument
-                        news_sentiment = self._get_instrument_news_sentiment(symbol)
-                        
-                        # Get real-time technical analysis
-                        technical_analysis = self._analyze_instrument_technical(symbol, data)
-                        
-                        # Calculate exact entry prices from real data
-                        entry_prices = self._calculate_exact_entry_prices(symbol, data, cfd_setup)
-                        
-                        # Check if trade is still executable with real-time data
-                        trade_status = self._check_trade_executability(symbol, data, cfd_setup)
-                        
-                        # Calculate position sizing for £147 capital
-                        position_sizing = self._calculate_position_sizing(capital, cfd_setup)
-                        
-                        # Create recommendation
-                        recommendation = {
-                            'symbol': symbol,
-                            'instrument_type': instrument_type,
-                            'setup_type': cfd_setup['setup_type'],
-                            'direction': cfd_setup['direction'],
-                            'confidence': cfd_setup['confidence'],
-                            'setup_score': cfd_setup['setup_score'],
-                            'entry_prices': entry_prices,
-                            'stop_loss': cfd_setup['stop_loss'],
-                            'take_profit': cfd_setup['take_profit'],
-                            'news_sentiment': news_sentiment,
-                            'technical_analysis': technical_analysis,
-                            'trade_status': trade_status,
-                            'position_sizing': position_sizing,
-                            'risk_metrics': cfd_setup['risk_metrics'],
-                            'market_conditions': market_conditions,
-                            'recommendation_reason': self._generate_recommendation_reason(cfd_setup, news_sentiment, technical_analysis),
-                            'execution_priority': self._calculate_execution_priority(cfd_setup, news_sentiment, technical_analysis),
-                            'data_source': 'real_time',
-                            'last_updated': datetime.now().isoformat()
-                        }
-                        
-                        recommendations.append(recommendation)
-                        
-                    except Exception as e:
-                        self.logger.warning(f"Error analyzing {symbol}: {str(e)}")
-                        continue
-            
-            # Sort by execution priority and filter by criteria
-            recommendations.sort(key=lambda x: x['execution_priority'], reverse=True)
-            
-            # Filter recommendations based on risk criteria
-            filtered_recommendations = self._filter_recommendations(recommendations, capital)
             
             # Generate final analysis
             final_analysis = {
                 'timestamp': datetime.now().isoformat(),
                 'capital': capital,
                 'market_conditions': market_conditions,
-                'total_recommendations': len(recommendations),
-                'filtered_recommendations': len(filtered_recommendations),
-                'top_recommendations': filtered_recommendations[:5],  # Top 5 recommendations
-                'risk_summary': self._generate_risk_summary(filtered_recommendations, capital),
-                'execution_plan': self._generate_execution_plan(filtered_recommendations, capital),
+                'trading_picks': trading_picks,
+                'total_picks': len(trading_picks),
+                'high_probability_picks': len([p for p in trading_picks if p['likelihood_stars'] >= 4]),
                 'data_source': 'real_time'
             }
             
@@ -381,321 +650,6 @@ class FinancialAdvisor:
         except Exception as e:
             self.logger.error(f"Error analyzing technical for {symbol}: {str(e)}")
             return {}
-    
-    def _calculate_exact_entry_prices(self, symbol: str, data: pd.DataFrame, cfd_setup: Dict) -> Dict:
-        """Calculate exact entry prices from real market data"""
-        try:
-            current_price = data['Close'].iloc[-1]
-            direction = cfd_setup.get('direction', 'neutral')
-            
-            if direction == 'long':
-                # For long positions, look for pullback entries
-                entry_prices = {
-                    'aggressive': round(current_price * 0.995, 4),  # 0.5% below current
-                    'moderate': round(current_price * 0.99, 4),     # 1% below current
-                    'conservative': round(current_price * 0.985, 4)  # 1.5% below current
-                }
-            elif direction == 'short':
-                # For short positions, look for bounce entries
-                entry_prices = {
-                    'aggressive': round(current_price * 1.005, 4),  # 0.5% above current
-                    'moderate': round(current_price * 1.01, 4),     # 1% above current
-                    'conservative': round(current_price * 1.015, 4)  # 1.5% above current
-                }
-            else:
-                # Neutral - use current price
-                entry_prices = {
-                    'current': round(current_price, 4)
-                }
-            
-            # Add current market price and data source
-            entry_prices['market_price'] = round(current_price, 4)
-            entry_prices['data_source'] = 'real_time'
-            entry_prices['last_updated'] = datetime.now().isoformat()
-            
-            return entry_prices
-            
-        except Exception as e:
-            self.logger.error(f"Error calculating entry prices for {symbol}: {str(e)}")
-            return {'market_price': round(data['Close'].iloc[-1], 4), 'data_source': 'real_time'}
-    
-    def _check_trade_executability(self, symbol: str, data: pd.DataFrame, cfd_setup: Dict) -> Dict:
-        """Check if trade is still executable using real-time data"""
-        try:
-            current_price = data['Close'].iloc[-1]
-            direction = cfd_setup.get('direction', 'neutral')
-            
-            # Check if price is still within reasonable range for entry
-            if direction == 'long':
-                # For long, check if price hasn't moved too high
-                max_entry = current_price * 1.02  # 2% above current
-                is_executable = True
-                reason = "Price within long entry range"
-            elif direction == 'short':
-                # For short, check if price hasn't moved too low
-                min_entry = current_price * 0.98  # 2% below current
-                is_executable = True
-                reason = "Price within short entry range"
-            else:
-                is_executable = False
-                reason = "No clear direction"
-            
-            # Check if setup has expired (confidence too low)
-            confidence = cfd_setup.get('confidence', 0)
-            if confidence < 0.6:
-                is_executable = False
-                reason = f"Setup confidence too low: {confidence:.1%}"
-            
-            return {
-                'is_executable': is_executable,
-                'reason': reason,
-                'current_price': current_price,
-                'confidence': confidence,
-                'timestamp': datetime.now().isoformat(),
-                'data_source': 'real_time'
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Error checking trade executability for {symbol}: {str(e)}")
-            return {'is_executable': False, 'reason': 'Error checking executability', 'data_source': 'real_time'}
-    
-    def _calculate_position_sizing(self, capital: float, cfd_setup: Dict) -> Dict:
-        """Calculate position sizing for given capital"""
-        try:
-            risk_metrics = cfd_setup.get('risk_metrics', {})
-            
-            if not risk_metrics:
-                return {
-                    'position_size': 0,
-                    'units': 0,
-                    'risk_amount': 0,
-                    'reason': 'No risk metrics available',
-                    'data_source': 'real_time'
-                }
-            
-            # Calculate position size based on 2% risk
-            max_risk_amount = capital * self.risk_settings['max_risk_per_trade']
-            risk_per_unit = risk_metrics.get('risk_amount', 0)
-            
-            if risk_per_unit > 0:
-                units = max_risk_amount / risk_per_unit
-                position_size = units * cfd_setup.get('entry_levels', {}).get('moderate', 0)
-            else:
-                units = 0
-                position_size = 0
-            
-            return {
-                'position_size': round(position_size, 2),
-                'units': round(units, 2),
-                'risk_amount': round(max_risk_amount, 2),
-                'max_capital_usage': round((position_size / capital) * 100, 1),
-                'reason': f"Based on {self.risk_settings['max_risk_per_trade']*100}% risk per trade",
-                'data_source': 'real_time'
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Error calculating position sizing: {str(e)}")
-            return {'position_size': 0, 'units': 0, 'risk_amount': 0, 'data_source': 'real_time'}
-    
-    def _generate_recommendation_reason(self, cfd_setup: Dict, news_sentiment: Dict, technical_analysis: Dict) -> str:
-        """Generate human-readable recommendation reason from real data"""
-        try:
-            reasons = []
-            
-            # CFD setup reasons
-            setup_type = cfd_setup.get('setup_type', 'Unknown')
-            confidence = cfd_setup.get('confidence', 0)
-            direction = cfd_setup.get('direction', 'neutral')
-            
-            reasons.append(f"CFD Setup: {setup_type} with {confidence:.1%} confidence")
-            reasons.append(f"Direction: {direction.upper()} position recommended")
-            
-            # News sentiment reasons
-            news_sent = news_sentiment.get('sentiment', 'NEUTRAL')
-            if news_sent != 'NEUTRAL':
-                reasons.append(f"News Sentiment: {news_sent.lower()} market sentiment")
-            
-            # Technical analysis reasons
-            tech_score = technical_analysis.get('technical_score', 0.5)
-            if tech_score > 0.7:
-                reasons.append("Technical Analysis: Strong technical indicators")
-            elif tech_score < 0.3:
-                reasons.append("Technical Analysis: Weak technical indicators")
-            
-            # Risk/reward reasons
-            risk_metrics = cfd_setup.get('risk_metrics', {})
-            if risk_metrics:
-                rr_ratio = risk_metrics.get('risk_reward_ratio', 0)
-                if rr_ratio >= 2.0:
-                    reasons.append(f"Risk/Reward: Excellent {rr_ratio:.1f}:1 ratio")
-                elif rr_ratio >= 1.5:
-                    reasons.append(f"Risk/Reward: Good {rr_ratio:.1f}:1 ratio")
-            
-            # Data source
-            reasons.append("Data Source: Real-time market data")
-            
-            return " | ".join(reasons)
-            
-        except Exception as e:
-            self.logger.error(f"Error generating recommendation reason: {str(e)}")
-            return "CFD setup analysis completed with real-time data"
-    
-    def _calculate_execution_priority(self, cfd_setup: Dict, news_sentiment: Dict, technical_analysis: Dict) -> float:
-        """Calculate execution priority score from real data"""
-        try:
-            priority = 0.0
-            
-            # CFD setup priority (40% weight)
-            confidence = cfd_setup.get('confidence', 0)
-            priority += confidence * 0.4
-            
-            # News sentiment priority (30% weight)
-            news_sent = news_sentiment.get('sentiment', 'NEUTRAL')
-            if news_sent == 'BULLISH':
-                priority += 0.3
-            elif news_sent == 'BEARISH':
-                priority += 0.2
-            else:
-                priority += 0.1
-            
-            # Technical analysis priority (30% weight)
-            tech_score = technical_analysis.get('technical_score', 0.5)
-            priority += tech_score * 0.3
-            
-            return priority
-            
-        except Exception as e:
-            self.logger.error(f"Error calculating execution priority: {str(e)}")
-            return 0.5
-    
-    def _filter_recommendations(self, recommendations: List[Dict], capital: float) -> List[Dict]:
-        """Filter recommendations based on risk criteria"""
-        try:
-            filtered = []
-            
-            for rec in recommendations:
-                # Check if trade is executable
-                if not rec.get('trade_status', {}).get('is_executable', False):
-                    continue
-                
-                # Check confidence threshold
-                if rec.get('confidence', 0) < 0.6:
-                    continue
-                
-                # Check risk/reward ratio
-                risk_metrics = rec.get('risk_metrics', {})
-                if risk_metrics:
-                    rr_ratio = risk_metrics.get('risk_reward_ratio', 0)
-                    if rr_ratio < self.risk_settings['min_risk_reward']:
-                        continue
-                
-                # Check position sizing
-                position_sizing = rec.get('position_sizing', {})
-                if position_sizing.get('position_size', 0) > capital * 0.5:  # Max 50% of capital per trade
-                    continue
-                
-                filtered.append(rec)
-            
-            return filtered
-            
-        except Exception as e:
-            self.logger.error(f"Error filtering recommendations: {str(e)}")
-            return recommendations
-    
-    def _generate_risk_summary(self, recommendations: List[Dict], capital: float) -> Dict:
-        """Generate risk summary for all recommendations"""
-        try:
-            if not recommendations:
-                return {'total_risk': 0, 'max_drawdown': 0, 'risk_level': 'LOW', 'data_source': 'real_time'}
-            
-            total_risk = sum(rec.get('position_sizing', {}).get('risk_amount', 0) for rec in recommendations)
-            max_risk_per_trade = max(rec.get('position_sizing', {}).get('risk_amount', 0) for rec in recommendations)
-            
-            # Calculate risk level
-            risk_percentage = (total_risk / capital) * 100
-            if risk_percentage > 10:
-                risk_level = 'HIGH'
-            elif risk_percentage > 5:
-                risk_level = 'MEDIUM'
-            else:
-                risk_level = 'LOW'
-            
-            return {
-                'total_risk': round(total_risk, 2),
-                'max_risk_per_trade': round(max_risk_per_trade, 2),
-                'total_risk_percentage': round(risk_percentage, 1),
-                'risk_level': risk_level,
-                'capital': capital,
-                'recommendations_count': len(recommendations),
-                'data_source': 'real_time'
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Error generating risk summary: {str(e)}")
-            return {'total_risk': 0, 'risk_level': 'UNKNOWN', 'data_source': 'real_time'}
-    
-    def _generate_execution_plan(self, recommendations: List[Dict], capital: float) -> Dict:
-        """Generate execution plan for recommendations"""
-        try:
-            if not recommendations:
-                return {'execution_steps': [], 'total_capital_required': 0, 'data_source': 'real_time'}
-            
-            execution_steps = []
-            total_capital_required = 0
-            
-            for i, rec in enumerate(recommendations[:3], 1):  # Top 3 recommendations
-                symbol = rec.get('symbol', 'Unknown')
-                direction = rec.get('direction', 'neutral')
-                entry_prices = rec.get('entry_prices', {})
-                position_sizing = rec.get('position_sizing', {})
-                
-                # Determine entry price
-                if direction == 'long':
-                    entry_price = entry_prices.get('moderate', entry_prices.get('market_price', 0))
-                    entry_type = 'Buy at pullback'
-                elif direction == 'short':
-                    entry_price = entry_prices.get('moderate', entry_prices.get('market_price', 0))
-                    entry_type = 'Sell at bounce'
-                else:
-                    continue
-                
-                # Calculate capital required
-                units = position_sizing.get('units', 0)
-                capital_required = units * entry_price
-                total_capital_required += capital_required
-                
-                execution_step = {
-                    'step': i,
-                    'symbol': symbol,
-                    'action': f"{direction.upper()} {entry_type}",
-                    'entry_price': round(entry_price, 4),
-                    'units': round(units, 2),
-                    'capital_required': round(capital_required, 2),
-                    'stop_loss': rec.get('stop_loss', {}).get('level'),
-                    'take_profit': rec.get('take_profit', {}).get('level'),
-                    'priority': 'HIGH' if i == 1 else 'MEDIUM' if i == 2 else 'LOW',
-                    'data_source': 'real_time'
-                }
-                
-                execution_steps.append(execution_step)
-            
-            return {
-                'execution_steps': execution_steps,
-                'total_capital_required': round(total_capital_required, 2),
-                'capital_available': capital,
-                'execution_notes': [
-                    "Execute trades in priority order",
-                    "Set stop losses immediately after entry",
-                    "Monitor positions throughout the day",
-                    "Exit positions before market close for same-day trading",
-                    "All data is real-time and live"
-                ],
-                'data_source': 'real_time'
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Error generating execution plan: {str(e)}")
-            return {'execution_steps': [], 'total_capital_required': 0, 'data_source': 'real_time'}
     
     def _get_volatility_trading_implication(self, volatility_condition: str) -> str:
         """Get trading implications based on volatility"""
