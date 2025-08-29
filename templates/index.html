@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial AI - Professional Trading Advisor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+        }
+        .btn {
+            border-radius: 25px;
+            font-weight: 600;
+            padding: 10px 25px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            border: none;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .trading-picks-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .trading-picks-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 15px;
+        }
+        .trading-picks-table td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .trading-picks-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .likelihood-stars {
+            font-size: 18px;
+            color: #ffc107;
+        }
+        .setup-type {
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .setup-type.short {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .setup-type.long {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+        .setup-type.either {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+        .instrument-name {
+            font-weight: 600;
+            color: #333;
+        }
+        .notes {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+        .stop-guide, .target-guide {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #495057;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            color: #dc3545;
+            padding: 20px;
+            text-align: center;
+        }
+        .success {
+            color: #28a745;
+            padding: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-chart-line me-2"></i>Financial AI
+                </a>
+                <div class="navbar-nav">
+                    <a class="nav-link" href="#overview">Overview</a>
+                    <a class="nav-link" href="#cfd">CFD Analysis</a>
+                    <a class="nav-link" href="#advisor">Financial Advisor</a>
+                    <a class="nav-link" href="#picks">Trading Picks</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Dashboard -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h1 class="text-white text-center mb-4">
+                            <i class="fas fa-chart-line me-3"></i>Financial AI - Professional Trading Advisor
+                        </h1>
+                        <p class="text-white text-center lead">100+ Years of Trading Experience - Exact Short/Long Recommendations with Precise Entry Prices for Trading212 CFD</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Market Analysis -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-brain me-2"></i>Professional Market Analysis
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="analysisCapital" class="form-label">Trading Capital (£)</label>
+                                <input type="number" class="form-control" id="analysisCapital" value="147" min="1" max="10000">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="analysisFocus" class="form-label">Analysis Focus</label>
+                                <select class="form-control" id="analysisFocus">
+                                    <option value="all">All Market Conditions</option>
+                                    <option value="shorts">Short Opportunities</option>
+                                    <option value="longs">Long Opportunities</option>
+                                    <option value="volatility">Volatility Analysis</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary" onclick="getProfessionalAnalysis()">
+                                <i class="fas fa-brain me-2"></i>Get Professional Analysis
+                            </button>
+                        </div>
+                        <div id="quickAnalysisResults" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- UK Market Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-clock me-2"></i>UK Market Status & Trading Hours
+                    </div>
+                    <div class="card-body">
+                        <div id="ukMarketStatus" class="row">
+                            <!-- UK market status will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Picks Section -->
+        <section id="picks" class="mb-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-star me-2"></i>Professional Trading Picks - Today's Opportunities
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="picksCapital" class="form-label">Trading Capital (£)</label>
+                                    <input type="number" class="form-control" id="picksCapital" value="147" min="1" max="10000">
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-primary mt-4" onclick="getTradingPicks()">
+                                        <i class="fas fa-star me-2"></i>Get Today's Trading Picks
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="tradingPicksResults" class="mt-3">
+                                <!-- Trading picks will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CFD Opportunities Scanner -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-search-dollar me-2"></i>CFD Opportunities Scanner
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="instrumentType" class="form-label">Instrument Type</label>
+                                <select class="form-control" id="instrumentType">
+                                    <option value="all">All Instruments</option>
+                                    <option value="stocks">Stocks</option>
+                                    <option value="indices">Indices</option>
+                                    <option value="forex">Forex</option>
+                                    <option value="commodities">Commodities</option>
+                                    <option value="crypto">Crypto</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="region" class="form-label">Region</label>
+                                <select class="form-control" id="region">
+                                    <option value="all">All Regions</option>
+                                    <option value="uk">UK</option>
+                                    <option value="us">US</option>
+                                    <option value="eu">Europe</option>
+                                    <option value="au">Australia</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="minConfidence" class="form-label">Min Confidence</label>
+                                <select class="form-control" id="minConfidence">
+                                    <option value="0.7">70%</option>
+                                    <option value="0.8">80%</option>
+                                    <option value="0.9">90%</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary mt-4" onclick="scanCFDOpportunities()">
+                                    <i class="fas fa-search me-2"></i>Scan Opportunities
+                                </button>
+                            </div>
+                        </div>
+                        <div id="cfdScannerResults" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CFD Analysis Section -->
+        <section id="cfd" class="mb-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-chart-candlestick me-2"></i>CFD Analysis for Trading212
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="cfdSymbol" class="form-label">CFD Symbol</label>
+                                    <input type="text" class="form-control" id="cfdSymbol" placeholder="e.g., AAPL, EUR/USD, BTC/USD">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="cfdPeriod" class="form-label">Analysis Period</label>
+                                    <select class="form-control" id="cfdPeriod">
+                                        <option value="1d">1 Day</option>
+                                        <option value="5d">5 Days</option>
+                                        <option value="1mo">1 Month</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="cfdInterval" class="form-label">Interval</label>
+                                    <select class="form-control" id="cfdInterval">
+                                        <option value="5m">5 Minutes</option>
+                                        <option value="15m">15 Minutes</option>
+                                        <option value="1h">1 Hour</option>
+                                        <option value="1d">1 Day</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-primary mt-4" onclick="analyzeCFD()">
+                                        <i class="fas fa-chart-line me-2"></i>Analyze
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="cfdAnalysisResults" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Financial Advisor Section -->
+        <section id="advisor" class="mb-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-user-tie me-2"></i>Professional Financial Advisor - 100+ Years Trading Experience
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h5>Professional Trading Recommendations</h5>
+                                    <div class="mb-3">
+                                        <label for="advisorCapital" class="form-label">Trading Capital (£)</label>
+                                        <input type="number" class="form-control" id="advisorCapital" value="147" min="1" max="10000">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="advisorFocus" class="form-label">Trading Focus</label>
+                                        <select class="form-control" id="advisorFocus">
+                                            <option value="all">All Opportunities</option>
+                                            <option value="shorts">Short Positions Only</option>
+                                            <option value="longs">Long Positions Only</option>
+                                            <option value="same_day">Same Day Trading</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="getProfessionalRecommendations()">
+                                        <i class="fas fa-chart-candlestick me-2"></i>Get Professional Recommendations
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Advisor Actions</h5>
+                                    <button class="btn btn-success me-2 mb-2" onclick="analyzeMarketConditions()">
+                                        <i class="fas fa-globe me-2"></i>Market Conditions
+                                    </button>
+                                    <button class="btn btn-warning me-2 mb-2" onclick="getAvailableInstruments()">
+                                        <i class="fas fa-list me-2"></i>Available Instruments
+                                    </button>
+                                    <button class="btn btn-info me-2 mb-2" onclick="checkUKMarketStatus()">
+                                        <i class="fas fa-clock me-2"></i>UK Market Status
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="advisorResults" class="mt-3">
+                                <!-- Financial advisor results will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Trading Picks Functions
+        async function getTradingPicks() {
+            const capital = document.getElementById('picksCapital').value;
+            const resultsDiv = document.getElementById('tradingPicksResults');
+            
+            resultsDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin me-2"></i>Generating professional trading picks...</div>';
+            
+            try {
+                const response = await fetch(`/api/advisor/trading-picks?capital=${capital}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+                    return;
+                }
+                
+                displayTradingPicks(data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayTradingPicks(data) {
+            const resultsDiv = document.getElementById('tradingPicksResults');
+            
+            if (!data.picks || data.picks.length === 0) {
+                resultsDiv.innerHTML = '<div class="success"><i class="fas fa-info-circle me-2"></i>No trading picks available at this time. Check back later for new opportunities.</div>';
+                return;
+            }
+            
+            let html = `
+                <div class="trading-picks-table">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Instrument</th>
+                                <th>Setup Type</th>
+                                <th>Trigger Description</th>
+                                <th>Stop Guide</th>
+                                <th>Target Guide</th>
+                                <th>Likelihood of Execution Today</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            data.picks.forEach(pick => {
+                const setupTypeClass = pick.setup_type.toLowerCase().includes('short') ? 'short' : 
+                                     pick.setup_type.toLowerCase().includes('long') ? 'long' : 'either';
+                
+                html += `
+                    <tr>
+                        <td><span class="instrument-name">${pick.instrument}</span></td>
+                        <td><span class="setup-type ${setupTypeClass}">${pick.setup_type}</span></td>
+                        <td>${pick.trigger_description}</td>
+                        <td><span class="stop-guide">${pick.stop_guide}</span></td>
+                        <td><span class="target-guide">${pick.target_guide}</span></td>
+                        <td><span class="likelihood-stars">${pick.likelihood_text}</span></td>
+                        <td><span class="notes">${pick.notes}</span></td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Generated at ${new Date().toLocaleString()} | Data Source: ${data.picks[0]?.data_source || 'Real-time'}
+                    </small>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // Existing Functions
+        async function getProfessionalAnalysis() {
+            const capital = document.getElementById('analysisCapital').value;
+            const focus = document.getElementById('analysisFocus').value;
+            const resultsDiv = document.getElementById('quickAnalysisResults');
+            
+            resultsDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin me-2"></i>Analyzing market conditions...</div>';
+            
+            try {
+                const response = await fetch(`/api/advisor/quick-analysis?capital=${capital}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+                    return;
+                }
+                
+                displayProfessionalAnalysis(data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayProfessionalAnalysis(result) {
+            const resultsDiv = document.getElementById('quickAnalysisResults');
+            
+            let html = '<div class="row">';
+            
+            // Market Conditions
+            if (result.market_conditions) {
+                const mc = result.market_conditions;
+                html += `
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-globe me-2"></i>Market Conditions
+                            </div>
+                            <div class="card-body">
+                                <p><strong>UK Market:</strong> ${mc.uk_market_status?.status || 'Unknown'}</p>
+                                <p><strong>Global Sentiment:</strong> ${mc.global_sentiment?.overall_sentiment || 'Unknown'}</p>
+                                <p><strong>News Sentiment:</strong> ${mc.news_sentiment?.overall_sentiment || 'Unknown'}</p>
+                                <p><strong>Volatility:</strong> ${mc.market_volatility?.overall_condition || 'Unknown'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Trading Picks Summary
+            if (result.trading_picks) {
+                html += `
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-star me-2"></i>Trading Picks Summary
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Total Picks:</strong> ${result.trading_picks.length}</p>
+                                <p><strong>High Probability:</strong> ${result.trading_picks.filter(p => p.likelihood_stars >= 4).length}</p>
+                                <p><strong>Data Source:</strong> ${result.trading_picks[0]?.data_source || 'Real-time'}</p>
+                                <button class="btn btn-primary btn-sm" onclick="getTradingPicks()">
+                                    <i class="fas fa-eye me-2"></i>View All Picks
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function checkUKMarketStatus() {
+            const resultsDiv = document.getElementById('ukMarketStatus');
+            
+            try {
+                const response = await fetch('/api/advisor/uk-market-status');
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error">${data.error}</div>`;
+                    return;
+                }
+                
+                displayUKMarketStatus(data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayUKMarketStatus(result) {
+            const resultsDiv = document.getElementById('ukMarketStatus');
+            
+            const statusColor = result.is_open ? 'success' : 'warning';
+            const statusIcon = result.is_open ? 'fa-check-circle' : 'fa-clock';
+            
+            let html = `
+                <div class="col-md-6">
+                    <div class="card border-${statusColor}">
+                        <div class="card-body text-center">
+                            <i class="fas ${statusIcon} fa-3x text-${statusColor} mb-3"></i>
+                            <h4>UK Market: ${result.status}</h4>
+                            <p><strong>Current Time:</strong> ${result.current_time}</p>
+                            <p><strong>Market Hours:</strong> ${result.market_open} - ${result.market_close}</p>
+                            <p><strong>Timezone:</strong> ${result.timezone}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (!result.is_open) {
+                if (result.time_to_open) {
+                    html += `
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-hourglass-start fa-3x text-info mb-3"></i>
+                                    <h4>Market Opens In</h4>
+                                    <h2 class="text-info">${result.time_to_open}</h2>
+                                    <p>Next trading session starts soon</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (result.time_to_close) {
+                    html += `
+                        <div class="col-md-6">
+                            <div class="card border-secondary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-moon fa-3x text-secondary mb-3"></i>
+                                    <h4>Market Closed</h4>
+                                    <p>Closed ${result.time_to_close} ago</p>
+                                    <p>Next session: Tomorrow at ${result.market_open}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                html += `
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-trading-chart fa-3x text-success mb-3"></i>
+                                <h4>Ready to Trade!</h4>
+                                <p>UK market is open and active</p>
+                                <p>Get live trading picks now</p>
+                                <button class="btn btn-success" onclick="getTradingPicks()">
+                                    <i class="fas fa-star me-2"></i>Get Trading Picks
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function getProfessionalRecommendations() {
+            const capital = document.getElementById('advisorCapital').value;
+            const focus = document.getElementById('advisorFocus').value;
+            const resultsDiv = document.getElementById('advisorResults');
+            
+            resultsDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin me-2"></i>Generating professional recommendations...</div>';
+            
+            try {
+                const response = await fetch(`/api/advisor/trading-recommendations?capital=${capital}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+                    return;
+                }
+                
+                displayProfessionalRecommendations(data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayProfessionalRecommendations(result) {
+            const resultsDiv = document.getElementById('advisorResults');
+            
+            let html = `
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-chart-candlestick me-2"></i>Professional Trading Recommendations
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h3 class="text-primary">${result.total_picks || 0}</h3>
+                                            <p>Total Picks</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h3 class="text-success">${result.high_probability_picks || 0}</h3>
+                                            <p>High Probability</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h3 class="text-info">£${result.capital || 0}</h3>
+                                            <p>Capital</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h3 class="text-warning">${result.market_conditions?.data_source || 'Real-time'}</h3>
+                                            <p>Data Source</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <button class="btn btn-primary" onclick="getTradingPicks()">
+                                        <i class="fas fa-star me-2"></i>View Detailed Trading Picks
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function analyzeMarketConditions() {
+            const resultsDiv = document.getElementById('advisorResults');
+            
+            resultsDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin me-2"></i>Analyzing market conditions...</div>';
+            
+            try {
+                const response = await fetch('/api/advisor/market-analysis');
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+                    return;
+                }
+                
+                displayMarketConditions(data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayMarketConditions(result) {
+            const resultsDiv = document.getElementById('advisorResults');
+            
+            let html = `
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-globe me-2"></i>Market Conditions Analysis
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5>Market Status</h5>
+                                        <p><strong>UK Market:</strong> ${result.uk_market_status?.status || 'Unknown'}</p>
+                                        <p><strong>Global Sentiment:</strong> ${result.global_sentiment?.overall_sentiment || 'Unknown'}</p>
+                                        <p><strong>News Sentiment:</strong> ${result.news_sentiment?.overall_sentiment || 'Unknown'}</p>
+                                        <p><strong>Volatility:</strong> ${result.market_volatility?.overall_condition || 'Unknown'}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5>Technical Overview</h5>
+                                        <p><strong>Data Source:</strong> ${result.data_source || 'Real-time'}</p>
+                                        <p><strong>Last Updated:</strong> ${new Date(result.timestamp).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function getAvailableInstruments() {
+            const resultsDiv = document.getElementById('advisorResults');
+            
+            try {
+                const response = await fetch('/api/advisor/instruments');
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+                    return;
+                }
+                
+                displayAvailableInstruments(data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayAvailableInstruments(result) {
+            const resultsDiv = document.getElementById('advisorResults');
+            
+            let html = `
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-list me-2"></i>Available Trading212 CFD Instruments
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+            `;
+            
+            for (const [category, instruments] of Object.entries(result)) {
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <h6>${category.replace('_', ' ').toUpperCase()}</h6>
+                        <p class="text-muted">${instruments.slice(0, 5).join(', ')}${instruments.length > 5 ? '...' : ''}</p>
+                    </div>
+                `;
+            }
+            
+            html += `
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function scanCFDOpportunities() {
+            const instrumentType = document.getElementById('instrumentType').value;
+            const region = document.getElementById('region').value;
+            const minConfidence = document.getElementById('minConfidence').value;
+            const resultsDiv = document.getElementById('cfdScannerResults');
+            
+            resultsDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin me-2"></i>Scanning for CFD opportunities...</div>';
+            
+            try {
+                const response = await fetch('/api/cfd/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        instrument_type: instrumentType,
+                        region: region,
+                        min_confidence: parseFloat(minConfidence)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+                    return;
+                }
+                
+                displayCFDScannerResults(data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayCFDScannerResults(result) {
+            const resultsDiv = document.getElementById('cfdScannerResults');
+            
+            if (!result.opportunities || result.opportunities.length === 0) {
+                resultsDiv.innerHTML = '<div class="success"><i class="fas fa-info-circle me-2"></i>No CFD opportunities found with the current criteria. Try adjusting your parameters.</div>';
+                return;
+            }
+            
+            let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-search-dollar me-2"></i>CFD Opportunities Found: ${result.opportunities.length}
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+            `;
+            
+            result.opportunities.slice(0, 6).forEach(opp => {
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h6 class="card-title">${opp.symbol}</h6>
+                                <p><strong>Setup Type:</strong> ${opp.setup_type}</p>
+                                <p><strong>Direction:</strong> ${opp.direction}</p>
+                                <p><strong>Confidence:</strong> ${(opp.confidence * 100).toFixed(1)}%</p>
+                                <p><strong>Score:</strong> ${opp.setup_score.toFixed(2)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function analyzeCFD() {
+            const symbol = document.getElementById('cfdSymbol').value;
+            const period = document.getElementById('cfdPeriod').value;
+            const interval = document.getElementById('cfdInterval').value;
+            const resultsDiv = document.getElementById('cfdAnalysisResults');
+            
+            if (!symbol) {
+                resultsDiv.innerHTML = '<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Please enter a CFD symbol to analyze.</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin me-2"></i>Analyzing CFD setup...</div>';
+            
+            try {
+                const response = await fetch('/api/cfd/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        symbol: symbol,
+                        period: period,
+                        interval: interval
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+                    return;
+                }
+                
+                displayCFDAnalysisResults(data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayCFDAnalysisResults(result) {
+            const resultsDiv = document.getElementById('cfdAnalysisResults');
+            
+            let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-candlestick me-2"></i>CFD Analysis Results for ${result.symbol}
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Setup Analysis</h6>
+                                <p><strong>Setup Type:</strong> ${result.setup_type}</p>
+                                <p><strong>Direction:</strong> ${result.direction}</p>
+                                <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                                <p><strong>Setup Score:</strong> ${result.setup_score.toFixed(2)}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Risk Metrics</h6>
+                                <p><strong>Risk/Reward Ratio:</strong> ${result.risk_metrics?.risk_reward_ratio?.toFixed(2) || 'N/A'}</p>
+                                <p><strong>Stop Loss:</strong> ${result.stop_loss?.level || 'N/A'}</p>
+                                <p><strong>Take Profit:</strong> ${result.take_profit?.level || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', function() {
+            checkUKMarketStatus();
+        });
+    </script>
+</body>
+</html>
