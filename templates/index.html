@@ -224,6 +224,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#cfd">CFD Analysis</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#advisor">Financial Advisor</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -237,22 +240,67 @@
             <div class="row mb-4">
                 <div class="col-12">
                     <h1 class="text-white text-center mb-4">
-                        <i class="fas fa-chart-line me-3"></i>Financial AI - CFD Trading Analyzer
+                        <i class="fas fa-chart-line me-3"></i>Financial AI - Professional Trading Advisor
                     </h1>
-                    <p class="text-white text-center lead">Advanced AI-powered CFD analysis for Trading212 - Find the best trading setups in real-time</p>
+                    <p class="text-white text-center lead">100+ Years of Trading Experience - Exact Short/Long Recommendations with Precise Entry Prices for Trading212 CFD</p>
                 </div>
             </div>
 
-            <!-- Market Overview -->
+            <!-- Quick Market Analysis -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <i class="fas fa-globe me-2"></i>Market Overview
+                            <i class="fas fa-brain me-2"></i>Professional Market Analysis
                         </div>
                         <div class="card-body">
-                            <div id="marketOverview" class="row">
-                                <!-- Market data will be loaded here -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="quickCapital" class="form-label">Capital (£)</label>
+                                    <input type="number" class="form-control" id="quickCapital" value="147" min="1" max="10000">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="analysisType" class="form-label">Analysis Type</label>
+                                    <select class="form-control" id="analysisType">
+                                        <option value="quick">Quick Analysis</option>
+                                        <option value="comprehensive">Comprehensive Analysis</option>
+                                        <option value="market_conditions">Market Conditions Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="focusArea" class="form-label">Focus Area</label>
+                                    <select class="form-control" id="focusArea">
+                                        <option value="all">All Instruments</option>
+                                        <option value="uk_stocks">UK Stocks</option>
+                                        <option value="us_stocks">US Stocks</option>
+                                        <option value="indices">Indices</option>
+                                        <option value="forex">Forex</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-success w-100" onclick="getProfessionalAnalysis()" style="margin-top: 32px;">
+                                        <i class="fas fa-search-dollar me-2"></i>Get Professional Analysis
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="quickAnalysisResults" class="mt-3">
+                                <!-- Quick analysis results will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UK Market Status -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-clock me-2"></i>UK Market Status & Trading Hours
+                        </div>
+                        <div class="card-body">
+                            <div id="ukMarketStatus" class="row">
+                                <!-- UK market status will be loaded here -->
                             </div>
                         </div>
                     </div>
@@ -579,6 +627,57 @@
                 </div>
             </div>
         </section>
+
+        <!-- Financial Advisor Section -->
+        <section id="advisor" class="mb-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-user-tie me-2"></i>Professional Financial Advisor - 100+ Years Trading Experience
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <h5>Professional Trading Recommendations</h5>
+                                    <div class="mb-3">
+                                        <label for="advisorCapital" class="form-label">Trading Capital (£)</label>
+                                        <input type="number" class="form-control" id="advisorCapital" value="147" min="1" max="10000">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="advisorFocus" class="form-label">Trading Focus</label>
+                                        <select class="form-control" id="advisorFocus">
+                                            <option value="all">All Opportunities</option>
+                                            <option value="shorts">Short Positions Only</option>
+                                            <option value="longs">Long Positions Only</option>
+                                            <option value="same_day">Same Day Trading</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="getProfessionalRecommendations()">
+                                        <i class="fas fa-chart-candlestick me-2"></i>Get Professional Recommendations
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Advisor Actions</h5>
+                                    <button class="btn btn-success me-2 mb-2" onclick="analyzeMarketConditions()">
+                                        <i class="fas fa-globe me-2"></i>Market Conditions
+                                    </button>
+                                    <button class="btn btn-warning me-2 mb-2" onclick="getAvailableInstruments()">
+                                        <i class="fas fa-list me-2"></i>Available Instruments
+                                    </button>
+                                    <button class="btn btn-info me-2 mb-2" onclick="checkUKMarketStatus()">
+                                        <i class="fas fa-clock me-2"></i>UK Market Status
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="advisorResults" class="mt-3">
+                                <!-- Financial advisor results will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <!-- Loading Spinner -->
@@ -601,6 +700,7 @@
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             loadMarketOverview();
+            checkUKMarketStatus();
         });
 
         // Market Overview
@@ -1714,6 +1814,697 @@
                 </div>
             `;
         }
+
+        // Financial Advisor
+        async function getProfessionalAnalysis() {
+            const capital = parseFloat(document.getElementById('quickCapital').value);
+            const analysisType = document.getElementById('analysisType').value;
+            const focusArea = document.getElementById('focusArea').value;
+
+            if (capital <= 0) {
+                showAlert('Please enter a valid capital amount.', 'warning');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                let url = `/api/advisor/quick-analysis?capital=${capital}`;
+                
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.error) {
+                    showAlert('Error getting professional analysis: ' + result.error, 'danger');
+                } else {
+                    displayProfessionalAnalysis(result);
+                }
+            } catch (error) {
+                showAlert('Error getting professional analysis: ' + error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayProfessionalAnalysis(result) {
+            const container = document.getElementById('quickAnalysisResults');
+            
+            let html = `
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-brain me-2"></i>Professional Market Analysis</h5>
+                    <p>Capital: £${result.capital.toLocaleString()}</p>
+                </div>
+            `;
+
+            // Market Summary
+            const marketSummary = result.market_summary;
+            if (marketSummary) {
+                html += `
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="metric-label">UK Market</div>
+                                    <div class="metric-value ${marketSummary.uk_market_status?.is_open ? 'text-success' : 'text-danger'}">
+                                        ${marketSummary.uk_market_status?.status || 'UNKNOWN'}
+                                    </div>
+                                    <small class="text-muted">${marketSummary.uk_market_status?.current_time || ''}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="metric-label">Global Sentiment</div>
+                                    <div class="metric-value ${marketSummary.global_sentiment?.overall_sentiment === 'BULLISH' ? 'text-success' : marketSummary.global_sentiment?.overall_sentiment === 'BEARISH' ? 'text-danger' : 'text-warning'}">
+                                        ${marketSummary.global_sentiment?.overall_sentiment || 'NEUTRAL'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="metric-label">News Sentiment</div>
+                                    <div class="metric-value ${marketSummary.news_sentiment?.overall_sentiment === 'BULLISH' ? 'text-success' : marketSummary.news_sentiment?.overall_sentiment === 'BEARISH' ? 'text-danger' : 'text-warning'}">
+                                        ${marketSummary.news_sentiment?.overall_sentiment || 'NEUTRAL'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <div class="metric-label">Volatility</div>
+                                    <div class="metric-value ${marketSummary.market_volatility?.overall_condition === 'HIGH' ? 'text-danger' : marketSummary.market_volatility?.overall_condition === 'LOW' ? 'text-success' : 'text-warning'}">
+                                        ${marketSummary.market_volatility?.overall_condition || 'NORMAL'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Top Recommendations
+            const topRecommendations = result.top_recommendations;
+            if (topRecommendations && topRecommendations.length > 0) {
+                html += `
+                    <h6>Top Trading Recommendations</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Type</th>
+                                    <th>Direction</th>
+                                    <th>Confidence</th>
+                                    <th>Entry Price</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                topRecommendations.forEach(rec => {
+                    const directionClass = rec.direction === 'long' ? 'text-success' : 
+                                         rec.direction === 'short' ? 'text-danger' : 'text-warning';
+                    const directionIcon = rec.direction === 'long' ? 'fa-arrow-up' : 
+                                        rec.direction === 'short' ? 'fa-arrow-down' : 'fa-minus';
+                    
+                    const entryPrice = rec.entry_prices?.moderate || rec.entry_prices?.market_price || 'N/A';
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${rec.symbol}</strong></td>
+                            <td>${rec.setup_type}</td>
+                            <td><span class="${directionClass}"><i class="fas ${directionIcon} me-1"></i>${rec.direction.toUpperCase()}</span></td>
+                            <td><span class="badge bg-${rec.confidence >= 0.8 ? 'success' : rec.confidence >= 0.7 ? 'warning' : 'info'}">${(rec.confidence * 100).toFixed(0)}%</span></td>
+                            <td>${typeof entryPrice === 'number' ? `$${entryPrice.toFixed(4)}` : entryPrice}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="analyzeCFDSetup('${rec.symbol}')">
+                                    <i class="fas fa-chart-line me-1"></i>Analyze
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                html += '<div class="alert alert-info">No trading recommendations available at this time.</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function checkUKMarketStatus() {
+            try {
+                const response = await fetch('/api/advisor/uk-market-status');
+                const result = await response.json();
+
+                if (result.error) {
+                    showAlert('Error getting UK market status: ' + result.error, 'danger');
+                } else {
+                    displayUKMarketStatus(result);
+                }
+            } catch (error) {
+                showAlert('Error getting UK market status: ' + error.message, 'danger');
+            }
+        }
+
+        function displayUKMarketStatus(result) {
+            const container = document.getElementById('ukMarketStatus');
+            const status = result.uk_market_status;
+            
+            if (!status) {
+                container.innerHTML = '<div class="alert alert-warning">Unable to get UK market status</div>';
+                return;
+            }
+
+            const statusClass = status.is_open ? 'success' : 'danger';
+            const statusIcon = status.is_open ? 'fa-check-circle' : 'fa-times-circle';
+            
+            let html = `
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-clock me-2"></i>UK Market Status</h5>
+                            <div class="metric-value text-${statusClass}">
+                                <i class="fas ${statusIcon} me-2"></i>${status.status}
+                            </div>
+                            <p class="mb-2">Current Time: ${status.current_time}</p>
+                            <p class="mb-2">Market Hours: ${status.market_open} - ${status.market_close}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (!status.is_open) {
+                if (status.time_to_open) {
+                    html += `
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h5><i class="fas fa-hourglass-start me-2"></i>Time to Market Open</h5>
+                                    <div class="metric-value text-warning">${status.time_to_open}</div>
+                                    <p class="mb-0">Market opens at ${status.market_open}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (status.time_to_close) {
+                    html += `
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h5><i class="fas fa-hourglass-end me-2"></i>Market Closed</h5>
+                                    <div class="metric-value text-danger">Closed ${status.time_to_close} ago</div>
+                                    <p class="mb-0">Market closed at ${status.market_close}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                html += `
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5><i class="fas fa-chart-line me-2"></i>Trading Active</h5>
+                                <div class="metric-value text-success">Market Open</div>
+                                <p class="mb-0">Trading until ${status.market_close}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function getProfessionalRecommendations() {
+            const capital = parseFloat(document.getElementById('advisorCapital').value);
+            const focus = document.getElementById('advisorFocus').value;
+
+            if (capital <= 0) {
+                showAlert('Please enter a valid capital amount.', 'warning');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch(`/api/advisor/trading-recommendations?capital=${capital}`);
+                const result = await response.json();
+
+                if (result.error) {
+                    showAlert('Error getting professional recommendations: ' + result.error, 'danger');
+                } else {
+                    displayProfessionalRecommendations(result);
+                }
+            } catch (error) {
+                showAlert('Error getting professional recommendations: ' + error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayProfessionalRecommendations(result) {
+            const container = document.getElementById('advisorResults');
+            
+            let html = `
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-user-tie me-2"></i>Professional Trading Recommendations</h5>
+                    <p>Capital: £${result.capital.toLocaleString()} | Generated: ${new Date(result.timestamp).toLocaleString()}</p>
+                </div>
+            `;
+
+            // Market Conditions Summary
+            const marketConditions = result.market_conditions;
+            if (marketConditions) {
+                html += `
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">UK Market Status</div>
+                                <div class="card-body text-center">
+                                    <div class="metric-value ${marketConditions.uk_market_status?.is_open ? 'text-success' : 'text-danger'}">
+                                        ${marketConditions.uk_market_status?.status || 'UNKNOWN'}
+                                    </div>
+                                    <small class="text-muted">${marketConditions.uk_market_status?.current_time || ''}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">Global Sentiment</div>
+                                <div class="card-body text-center">
+                                    <div class="metric-value ${marketConditions.global_sentiment?.overall_sentiment === 'BULLISH' ? 'text-success' : marketConditions.global_sentiment?.overall_sentiment === 'BEARISH' ? 'text-danger' : 'text-warning'}">
+                                        ${marketConditions.global_sentiment?.overall_sentiment || 'NEUTRAL'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">News Sentiment</div>
+                                <div class="card-body text-center">
+                                    <div class="metric-value ${marketConditions.news_sentiment?.overall_sentiment === 'BULLISH' ? 'text-success' : marketConditions.news_sentiment?.overall_sentiment === 'BEARISH' ? 'text-danger' : 'text-warning'}">
+                                        ${marketConditions.news_sentiment?.overall_sentiment || 'NEUTRAL'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Risk Summary
+            const riskSummary = result.risk_summary;
+            if (riskSummary) {
+                const riskClass = riskSummary.risk_level === 'HIGH' ? 'danger' : 
+                                 riskSummary.risk_level === 'MEDIUM' ? 'warning' : 'success';
+                
+                html += `
+                    <div class="alert alert-${riskClass}">
+                        <h6>Risk Summary</h6>
+                        <p><strong>Risk Level:</strong> ${riskSummary.risk_level}</p>
+                        <p><strong>Total Risk:</strong> £${riskSummary.total_risk}</p>
+                        <p><strong>Max Risk per Trade:</strong> £${riskSummary.max_risk_per_trade}</p>
+                        <p><strong>Total Risk Percentage:</strong> ${riskSummary.total_risk_percentage}%</p>
+                        <p><strong>Recommendations:</strong> ${riskSummary.recommendations_count}</p>
+                    </div>
+                `;
+            }
+
+            // Top Recommendations
+            const topRecommendations = result.top_recommendations;
+            if (topRecommendations && topRecommendations.length > 0) {
+                html += `
+                    <h6>Top Trading Recommendations</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Symbol</th>
+                                    <th>Type</th>
+                                    <th>Direction</th>
+                                    <th>Confidence</th>
+                                    <th>Entry Price</th>
+                                    <th>Stop Loss</th>
+                                    <th>Take Profit</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                topRecommendations.forEach((rec, index) => {
+                    const directionClass = rec.direction === 'long' ? 'text-success' : 
+                                         rec.direction === 'short' ? 'text-danger' : 'text-warning';
+                    const directionIcon = rec.direction === 'long' ? 'fa-arrow-up' : 
+                                        rec.direction === 'short' ? 'fa-arrow-down' : 'fa-minus';
+                    
+                    const entryPrice = rec.entry_prices?.moderate || rec.entry_prices?.market_price || 'N/A';
+                    const stopLoss = rec.stop_loss?.level || 'N/A';
+                    const takeProfit = rec.take_profit?.level || 'N/A';
+                    
+                    html += `
+                        <tr>
+                            <td><span class="badge bg-primary">${index + 1}</span></td>
+                            <td><strong>${rec.symbol}</strong></td>
+                            <td>${rec.setup_type}</td>
+                            <td><span class="${directionClass}"><i class="fas ${directionIcon} me-1"></i>${rec.direction.toUpperCase()}</span></td>
+                            <td><span class="badge bg-${rec.confidence >= 0.8 ? 'success' : rec.confidence >= 0.7 ? 'warning' : 'info'}">${(rec.confidence * 100).toFixed(0)}%</span></td>
+                            <td>${typeof entryPrice === 'number' ? `$${entryPrice.toFixed(4)}` : entryPrice}</td>
+                            <td>${typeof stopLoss === 'number' ? `$${stopLoss.toFixed(4)}` : stopLoss}</td>
+                            <td>${typeof takeProfit === 'number' ? `$${takeProfit.toFixed(4)}` : takeProfit}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="analyzeCFDSetup('${rec.symbol}')">
+                                    <i class="fas fa-chart-line me-1"></i>Analyze
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                html += '<div class="alert alert-info">No trading recommendations available at this time.</div>';
+            }
+
+            // Execution Plan
+            const executionPlan = result.execution_plan;
+            if (executionPlan && executionPlan.execution_steps.length > 0) {
+                html += `
+                    <h6>Execution Plan</h6>
+                    <div class="alert alert-warning">
+                        <p><strong>Total Capital Required:</strong> £${executionPlan.total_capital_required}</p>
+                        <p><strong>Capital Available:</strong> £${executionPlan.capital_available}</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Step</th>
+                                    <th>Symbol</th>
+                                    <th>Action</th>
+                                    <th>Entry Price</th>
+                                    <th>Units</th>
+                                    <th>Capital Required</th>
+                                    <th>Priority</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                executionPlan.execution_steps.forEach(step => {
+                    const priorityClass = step.priority === 'HIGH' ? 'danger' : 
+                                        step.priority === 'MEDIUM' ? 'warning' : 'info';
+                    
+                    html += `
+                        <tr>
+                            <td><span class="badge bg-primary">${step.step}</span></td>
+                            <td><strong>${step.symbol}</strong></td>
+                            <td>${step.action}</td>
+                            <td>$${step.entry_price}</td>
+                            <td>${step.units}</td>
+                            <td>£${step.capital_required}</td>
+                            <td><span class="badge bg-${priorityClass}">${step.priority}</span></td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6>Execution Notes:</h6>
+                        <ul class="mb-0">
+                            ${executionPlan.execution_notes.map(note => `<li>${note}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function analyzeMarketConditions() {
+            showLoading();
+            try {
+                const response = await fetch('/api/advisor/market-analysis');
+                const result = await response.json();
+
+                if (result.error) {
+                    showAlert('Error analyzing market conditions: ' + result.error, 'danger');
+                } else {
+                    displayMarketConditions(result);
+                }
+            } catch (error) {
+                showAlert('Error analyzing market conditions: ' + error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayMarketConditions(result) {
+            const container = document.getElementById('advisorResults');
+            const marketAnalysis = result.market_analysis;
+            
+            if (!marketAnalysis) {
+                container.innerHTML = '<div class="alert alert-danger">No market analysis data available</div>';
+                return;
+            }
+
+            let html = `
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-globe me-2"></i>Market Conditions Analysis</h5>
+                    <p>Generated: ${new Date(result.timestamp).toLocaleString()}</p>
+                </div>
+            `;
+
+            // UK Market Status
+            const ukStatus = marketAnalysis.uk_market_status;
+            if (ukStatus) {
+                const statusClass = ukStatus.is_open ? 'success' : 'danger';
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">UK Market Status</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Status:</strong> <span class="text-${statusClass}">${ukStatus.status}</span></p>
+                                    <p><strong>Current Time:</strong> ${ukStatus.current_time}</p>
+                                    <p><strong>Market Hours:</strong> ${ukStatus.market_open} - ${ukStatus.market_close}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    ${ukStatus.time_to_open ? `<p><strong>Time to Open:</strong> ${ukStatus.time_to_open}</p>` : ''}
+                                    ${ukStatus.time_to_close ? `<p><strong>Time Since Close:</strong> ${ukStatus.time_to_close}</p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Global Sentiment
+            const globalSentiment = marketAnalysis.global_sentiment;
+            if (globalSentiment) {
+                const sentimentClass = globalSentiment.overall_sentiment === 'BULLISH' ? 'success' : 
+                                     globalSentiment.overall_sentiment === 'BEARISH' ? 'danger' : 'warning';
+                
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">Global Market Sentiment</div>
+                        <div class="card-body">
+                            <p><strong>Overall Sentiment:</strong> <span class="text-${sentimentClass}">${globalSentiment.overall_sentiment}</span></p>
+                            <p><strong>Sentiment Score:</strong> ${(globalSentiment.sentiment_score * 100).toFixed(1)}%</p>
+                            <p><strong>Indices Analyzed:</strong> ${globalSentiment.indices_analyzed}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // News Sentiment
+            const newsSentiment = marketAnalysis.news_sentiment;
+            if (newsSentiment) {
+                const newsClass = newsSentiment.overall_sentiment === 'BULLISH' ? 'success' : 
+                                newsSentiment.overall_sentiment === 'BEARISH' ? 'danger' : 'warning';
+                
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">News Sentiment Analysis</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Overall Sentiment:</strong> <span class="text-${newsClass}">${newsSentiment.overall_sentiment}</span></p>
+                                    <p><strong>Bullish News:</strong> ${newsSentiment.bullish_news}</p>
+                                    <p><strong>Bearish News:</strong> ${newsSentiment.bearish_news}</p>
+                                    <p><strong>Neutral News:</strong> ${newsSentiment.neutral_news}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Key Headlines:</h6>
+                                    <ul>
+                                        ${newsSentiment.key_headlines.map(headline => `<li>${headline}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Market Volatility
+            const marketVolatility = marketAnalysis.market_volatility;
+            if (marketVolatility) {
+                const volClass = marketVolatility.overall_condition === 'HIGH' ? 'danger' : 
+                               marketVolatility.overall_condition === 'LOW' ? 'success' : 'warning';
+                
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">Market Volatility Analysis</div>
+                        <div class="card-body">
+                            <p><strong>Overall Condition:</strong> <span class="text-${volClass}">${marketVolatility.overall_condition}</span></p>
+                            <p><strong>Volatility Ratio:</strong> ${marketVolatility.volatility_ratio.toFixed(2)}x</p>
+                            <p><strong>Trading Implication:</strong> ${marketVolatility.trading_implication}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Technical Overview
+            const technicalOverview = marketAnalysis.technical_overview;
+            if (technicalOverview) {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">Technical Market Overview</div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Index</th>
+                                            <th>Trend</th>
+                                            <th>Price vs SMA20</th>
+                                            <th>Price vs SMA50</th>
+                                            <th>Current Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
+
+                Object.entries(technicalOverview).forEach(([index, data]) => {
+                    const trendClass = data.trend.includes('BULLISH') ? 'success' : 
+                                     data.trend.includes('BEARISH') ? 'danger' : 'warning';
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${index}</strong></td>
+                            <td><span class="text-${trendClass}">${data.trend}</span></td>
+                            <td>${data.price_vs_sma20}</td>
+                            <td>${data.price_vs_sma50}</td>
+                            <td>${data.current_price.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function getAvailableInstruments() {
+            try {
+                const response = await fetch('/api/advisor/instruments');
+                const result = await response.json();
+
+                if (result.error) {
+                    showAlert('Error getting available instruments: ' + result.error, 'danger');
+                } else {
+                    displayAvailableInstruments(result);
+                }
+            } catch (error) {
+                showAlert('Error getting available instruments: ' + error.message, 'danger');
+            }
+        }
+
+        function displayAvailableInstruments(result) {
+            const container = document.getElementById('advisorResults');
+            const instruments = result.instruments;
+            
+            if (!instruments) {
+                container.innerHTML = '<div class="alert alert-danger">No instrument data available</div>';
+                return;
+            }
+
+            let html = `
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-list me-2"></i>Available Trading212 CFD Instruments</h5>
+                    <p>All instruments available for professional analysis and trading recommendations</p>
+                </div>
+            `;
+
+            Object.entries(instruments).forEach(([type, instrumentList]) => {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <i class="fas fa-chart-line me-2"></i>${type.replace('_', ' ').toUpperCase()} (${Array.isArray(instrumentList) ? instrumentList.length : Object.keys(instrumentList).length} instruments)
+                        </div>
+                        <div class="card-body">
+                `;
+
+                if (typeof instrumentList === 'object' && !Array.isArray(instrumentList)) {
+                    // Regional stocks
+                    Object.entries(instrumentList).forEach(([region, symbols]) => {
+                        html += `
+                            <h6>${region} (${symbols.length} instruments)</h6>
+                            <div class="mb-2">
+                                ${symbols.map(symbol => `<span class="badge bg-secondary me-1 mb-1">${symbol}</span>`).join('')}
+                            </div>
+                        `;
+                    });
+                } else {
+                    // Other instruments
+                    html += `
+                        <div class="mb-2">
+                            ${instrumentList.map(symbol => `<span class="badge bg-secondary me-1 mb-1">${symbol}</span>`).join('')}
+                        </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Initialize dashboard with UK market status
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMarketOverview();
+            checkUKMarketStatus();
+        });
 
         // Utility functions
         function showLoading() {

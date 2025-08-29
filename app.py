@@ -16,6 +16,7 @@ from src.ai_models import FinancialAIModels
 from src.portfolio_manager import PortfolioManager
 from src.trading_strategies import TradingStrategies
 from src.cfd_analyzer import CFDAnalyzer
+from src.financial_advisor import FinancialAdvisor
 from src.config import Config
 
 # Configure logging
@@ -41,6 +42,7 @@ ai_models = FinancialAIModels()
 portfolio_manager = PortfolioManager()
 trading_strategies = TradingStrategies()
 cfd_analyzer = CFDAnalyzer()
+financial_advisor = FinancialAdvisor()
 
 @app.route('/')
 def index():
@@ -571,6 +573,108 @@ def scan_cfd_opportunities():
         
     except Exception as e:
         app.logger.error(f"Error scanning CFD opportunities: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advisor/market-analysis')
+def get_market_analysis():
+    """Get comprehensive market analysis and conditions"""
+    try:
+        market_analysis = financial_advisor.analyze_market_conditions()
+        
+        if not market_analysis:
+            return jsonify({'error': 'Failed to analyze market conditions'}), 500
+        
+        return jsonify({
+            'market_analysis': market_analysis,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting market analysis: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advisor/trading-recommendations')
+def get_trading_recommendations():
+    """Get comprehensive trading recommendations for Trading212 CFD"""
+    try:
+        capital = float(request.args.get('capital', 147.0))
+        
+        if capital <= 0:
+            return jsonify({'error': 'Capital must be greater than 0'}), 400
+        
+        recommendations = financial_advisor.get_trading_recommendations(capital)
+        
+        if not recommendations:
+            return jsonify({'error': 'Failed to generate trading recommendations'}), 500
+        
+        return jsonify({
+            'recommendations': recommendations,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting trading recommendations: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advisor/uk-market-status')
+def get_uk_market_status():
+    """Get UK market open/close status"""
+    try:
+        market_status = financial_advisor._check_uk_market_status()
+        
+        return jsonify({
+            'uk_market_status': market_status,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting UK market status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advisor/instruments')
+def get_available_instruments():
+    """Get available Trading212 CFD instruments"""
+    try:
+        instruments = financial_advisor._get_available_instruments()
+        
+        return jsonify({
+            'instruments': instruments,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting available instruments: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advisor/quick-analysis')
+def get_quick_analysis():
+    """Get quick market analysis and top recommendations"""
+    try:
+        capital = float(request.args.get('capital', 147.0))
+        
+        # Get market conditions
+        market_conditions = financial_advisor.analyze_market_conditions()
+        
+        # Get top 3 recommendations
+        recommendations = financial_advisor.get_trading_recommendations(capital)
+        top_recommendations = recommendations.get('top_recommendations', [])[:3]
+        
+        quick_analysis = {
+            'market_summary': {
+                'uk_market_status': market_conditions.get('uk_market_status', {}),
+                'global_sentiment': market_conditions.get('global_sentiment', {}),
+                'news_sentiment': market_conditions.get('news_sentiment', {}),
+                'market_volatility': market_conditions.get('market_volatility', {})
+            },
+            'top_recommendations': top_recommendations,
+            'capital': capital,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify(quick_analysis)
+        
+    except Exception as e:
+        app.logger.error(f"Error getting quick analysis: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 def _get_index_name(symbol):
