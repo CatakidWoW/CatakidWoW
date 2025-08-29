@@ -88,10 +88,10 @@ class Config:
     
     # Real-time Data Validation
     DATA_VALIDATION = {
-        'min_data_points': 100,
-        'max_price_change': 0.50,  # 50% max price change
+        'min_data_points': 20,        # Reduced from 100 to 20 for live trading
+        'max_price_change': 0.50,     # 50% max price change
         'min_volume': 1000,
-        'data_freshness': 300      # 5 minutes max age
+        'data_freshness': 300         # 5 minutes max age
     }
     
     # Free Data Rate Limits (Conservative to avoid being blocked)

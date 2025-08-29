@@ -295,7 +295,16 @@ class RealTimeDataManager:
         try:
             if self._check_rate_limit('yahoo_finance'):
                 ticker = yf.Ticker(symbol)
-                data = ticker.history(period=period, interval=interval)
+                
+                # For live trading, try to get more data points
+                if interval == '1h' and period == '1d':
+                    # Try to get more data by using a longer period
+                    data = ticker.history(period='5d', interval='1h')
+                elif interval == '1m':
+                    # For 1-minute data, get more recent data
+                    data = ticker.history(period='1d', interval='1m')
+                else:
+                    data = ticker.history(period=period, interval=interval)
                 
                 if not data.empty:
                     # Standardize column names
@@ -616,7 +625,16 @@ class RealTimeDataManager:
             if data.empty:
                 return data
             
-            # Remove any rows with invalid prices
+            # Make sure index is timezone-aware and convert to UTC
+            if not data.index.empty:
+                if data.index.tz is None:
+                    # If naive, assume UTC
+                    data.index = data.index.tz_localize('UTC')
+                else:
+                    # If timezone-aware, convert to UTC
+                    data.index = data.index.tz_convert('UTC')
+            
+            # Remove any rows with invalid OHLCV data
             data = data[
                 (data['Open'] > 0) & 
                 (data['High'] > 0) & 
@@ -634,11 +652,16 @@ class RealTimeDataManager:
             if len(data) < self.config.DATA_VALIDATION['min_data_points']:
                 self.logger.warning(f"Insufficient data points for {symbol}: {len(data)}")
             
-            # Check data freshness
+            # Check data freshness (use UTC for comparison)
             if not data.empty:
                 latest_time = data.index[-1]
                 if isinstance(latest_time, pd.Timestamp):
-                    age_minutes = (pd.Timestamp.now() - latest_time).total_seconds() / 60
+                    # Ensure both times are timezone-aware
+                    current_time = pd.Timestamp.now(tz='UTC')
+                    if latest_time.tz is None:
+                        latest_time = latest_time.tz_localize('UTC')
+                    
+                    age_minutes = (current_time - latest_time).total_seconds() / 60
                     if age_minutes > self.config.DATA_VALIDATION['data_freshness']:
                         self.logger.warning(f"Data for {symbol} is {age_minutes:.1f} minutes old")
             
