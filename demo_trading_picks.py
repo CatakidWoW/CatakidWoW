@@ -64,12 +64,36 @@ def demo_trading_picks():
     print(f'✅ Generated {len(demo_picks)} Professional Trading Picks!')
     print()
     
-    # Display in table format
-    print('Instrument | Setup Type | Trigger Description | Stop Guide | Target Guide | Likelihood of Execution Today | Notes')
-    print('-' * 80)
+    # Display in table format with proper alignment
+    print('🎯 PROFESSIONAL TRADING PICKS - EXACT FORMAT REQUESTED')
+    print('=' * 120)
+    print()
+    
+    # Table header
+    print(f"{'Instrument':<12} {'Setup Type':<12} {'Trigger Description':<35} {'Stop Guide':<20} {'Target Guide':<20} {'Likelihood':<25} {'Notes':<40}")
+    print('-' * 120)
     
     for i, pick in enumerate(demo_picks, 1):
-        print(f'{pick["instrument"]:10} | {pick["setup_type"]:10} | {pick["trigger_description"][:30]:30} | {pick["stop_guide"]:15} | {pick["target_guide"]:15} | {pick["likelihood_text"]:35} | {pick["notes"][:40]:40}')
+        # Truncate long descriptions for table display
+        trigger = pick["trigger_description"][:32] + "..." if len(pick["trigger_description"]) > 32 else pick["trigger_description"]
+        notes = pick["notes"][:37] + "..." if len(pick["notes"]) > 37 else pick["notes"]
+        
+        print(f"{pick['instrument']:<12} {pick['setup_type']:<12} {trigger:<35} {pick['stop_guide']:<20} {pick['target_guide']:<20} {pick['likelihood_text']:<25} {notes:<40}")
+    
+    print()
+    print('📊 DETAILED TRADING PICKS:')
+    print('=' * 50)
+    
+    # Show detailed view of each pick
+    for i, pick in enumerate(demo_picks, 1):
+        print(f'\n🎯 PICK #{i}: {pick["instrument"]}')
+        print(f'   Setup Type: {pick["setup_type"]}')
+        print(f'   Trigger Description: {pick["trigger_description"]}')
+        print(f'   Stop Guide: {pick["stop_guide"]}')
+        print(f'   Target Guide: {pick["target_guide"]}')
+        print(f'   Likelihood of Execution Today: {pick["likelihood_text"]}')
+        print(f'   Notes: {pick["notes"]}')
+        print('   ' + '-' * 50)
     
     print()
     print('🎯 TRADING PICKS ANALYSIS:')
