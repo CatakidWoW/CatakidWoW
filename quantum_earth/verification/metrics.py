@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import numpy as np
 
+from quantum_earth.core.jsonutil import json_safe
 from quantum_earth.storage import MetadataDB, StorageLayout
 
 
@@ -98,6 +99,7 @@ class VerificationEngine:
             "crps": crps_ensemble(members, truth) if members is not None else None,
             "meta": meta or {},
         }
+        result = json_safe(result)
         self.db.insert_verification(result["id"], result)
         self.storage.write_json("METRICS", f"{result['id']}.json", result)
         return result

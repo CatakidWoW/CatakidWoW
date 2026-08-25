@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from quantum_earth import __version__
 from quantum_earth.config import resolve_location
+from quantum_earth.core.jsonutil import json_safe
 from quantum_earth.data.registry import DataSourceRegistry
 from quantum_earth.models.baselines import ModelRegistry
 from quantum_earth.orchestration.loop import OperatingLoop
@@ -31,7 +32,7 @@ def dashboard() -> HTMLResponse:
 @app.get("/api/current")
 def current(location: str = Query("Birmingham")):
     try:
-        return loop.ingest_and_state(location)
+        return json_safe(loop.ingest_and_state(location))
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -43,7 +44,7 @@ def forecast(
     hours: int = Query(48, ge=1, le=168),
 ):
     try:
-        return loop.forecast(location, variable=variable, hours=hours)
+        return json_safe(loop.forecast(location, variable=variable, hours=hours))
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -55,17 +56,19 @@ def ensemble(
     hours: int = Query(48, ge=1, le=168),
 ):
     fc = forecast(location=location, variable=variable, hours=hours)
-    return {
-        "location": fc["location_name"],
-        "variable": fc["variable"],
-        "assurance": fc["assurance"],
-        "members": fc["members"],
-        "mean": fc["mean"],
-        "q10": fc["q10"],
-        "q90": fc["q90"],
-        "threshold_probabilities": fc["threshold_probabilities"],
-        "integrity": fc["integrity"],
-    }
+    return json_safe(
+        {
+            "location": fc["location_name"],
+            "variable": fc["variable"],
+            "assurance": fc["assurance"],
+            "members": fc["members"],
+            "mean": fc["mean"],
+            "q10": fc["q10"],
+            "q90": fc["q90"],
+            "threshold_probabilities": fc["threshold_probabilities"],
+            "integrity": fc["integrity"],
+        }
+    )
 
 
 @app.get("/api/earth-state")
@@ -97,7 +100,7 @@ def verification(
     variable: str = Query("temperature_2m"),
     hours: int = Query(24, ge=6, le=168),
 ):
-    return loop.verify_recent(location, variable=variable, hours=hours)
+    return json_safe(loop.verify_recent(location, variable=variable, hours=hours))
 
 
 @app.get("/api/system-health")

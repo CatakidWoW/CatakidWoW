@@ -102,22 +102,30 @@ function drawForecast(fc) {
 }
 
 async function runForecast() {
-  const loc = $("#location").value.trim() || "Birmingham";
-  const variable = $("#variable").value;
-  const hours = $("#hours").value;
-  const fc = await api(
-    `/api/forecast?location=${encodeURIComponent(loc)}&variable=${encodeURIComponent(variable)}&hours=${hours}`
-  );
-  drawForecast(fc);
-  const chip = $("#assurance-chip");
-  chip.textContent = `FORECAST ${fc.assurance}`;
-  chip.className = `assurance ${fc.assurance}`;
-  $("#forecast-meta").innerHTML = `
-    <strong>${fc.location_name}</strong> · ${fc.variable} (${fc.unit}) · horizon ${fc.horizon_hours}h<br/>
-    Models: ${fc.model_ids.join(", ")}<br/>
-    Assurance: ${fc.assurance} — ${(fc.assurance_reasons || []).join("; ")}<br/>
-    Integrity: ${fc.integrity}
-  `;
+  const btn = $("#forecast-btn");
+  btn.disabled = true;
+  btn.textContent = "Running…";
+  try {
+    const loc = $("#location").value.trim() || "Birmingham";
+    const variable = $("#variable").value;
+    const hours = $("#hours").value;
+    const fc = await api(
+      `/api/forecast?location=${encodeURIComponent(loc)}&variable=${encodeURIComponent(variable)}&hours=${hours}`
+    );
+    drawForecast(fc);
+    const chip = $("#assurance-chip");
+    chip.textContent = `FORECAST ${fc.assurance}`;
+    chip.className = `assurance ${fc.assurance}`;
+    $("#forecast-meta").innerHTML = `
+      <strong>${fc.location_name}</strong> · ${fc.variable} (${fc.unit}) · horizon ${fc.horizon_hours}h<br/>
+      Models: ${fc.model_ids.join(", ")}<br/>
+      Assurance: ${fc.assurance} — ${(fc.assurance_reasons || []).join("; ")}<br/>
+      Integrity: ${fc.integrity}
+    `;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Run Ensemble";
+  }
 }
 
 async function loadModels() {

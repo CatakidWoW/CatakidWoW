@@ -166,10 +166,14 @@ class OperatingLoop:
             card = self.models.get(model_id)
             if card:
                 card.metrics = {
-                    "mae": score["mae"],
-                    "rmse": score["rmse"],
-                    "bias": score["bias"],
-                    "correlation": score["correlation"],
+                    k: float(v)
+                    for k, v in {
+                        "mae": score["mae"],
+                        "rmse": score["rmse"],
+                        "bias": score["bias"],
+                        "correlation": score["correlation"],
+                    }.items()
+                    if v is not None and not (isinstance(v, float) and (v != v))
                 }
                 self.db.upsert("models", "model_id", model_id, card.model_dump(mode="json"))
 
