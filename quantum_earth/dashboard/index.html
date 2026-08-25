@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QUANTUM EARTH</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <div class="orbit-ring" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand-mark">QE</div>
+    <nav>
+      <button class="nav-btn active" data-view="earth">Earth</button>
+      <button class="nav-btn" data-view="forecast">Forecast</button>
+      <button class="nav-btn" data-view="models">Models</button>
+      <button class="nav-btn" data-view="health">System</button>
+    </nav>
+    <div class="assurance" id="assurance-chip">—</div>
+  </header>
+
+  <main>
+    <section class="hero" id="view-earth">
+      <div class="hero-copy">
+        <p class="eyebrow">Autonomous Earth-System Intelligence</p>
+        <h1>QUANTUM&nbsp;EARTH</h1>
+        <p class="lede">Probabilistic representation of what happens next — with uncertainty, provenance, and continuous verification.</p>
+        <div class="cta-row">
+          <label class="field">
+            <span>Location</span>
+            <input id="location" value="Birmingham" />
+          </label>
+          <button id="refresh-btn" class="primary">Observe &amp; Estimate</button>
+        </div>
+      </div>
+      <div class="globe-plane" id="globe">
+        <div class="globe-core">
+          <div class="latlon" id="latlon">—</div>
+          <div class="state-grid" id="state-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel hidden" id="view-forecast">
+      <div class="panel-head">
+        <h2>Forecast</h2>
+        <p>Ensemble mean with 10–90% interval. Numbers from models — not an LLM.</p>
+      </div>
+      <div class="controls">
+        <label class="field">
+          <span>Variable</span>
+          <select id="variable">
+            <option value="temperature_2m">Temperature</option>
+            <option value="precipitation">Precipitation</option>
+            <option value="wind_speed_10m">Wind</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Horizon (h)</span>
+          <input id="hours" type="number" min="6" max="168" value="48" />
+        </label>
+        <button id="forecast-btn" class="primary">Run Ensemble</button>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="forecast-chart" width="960" height="360"></canvas>
+      </div>
+      <div class="meta-row" id="forecast-meta"></div>
+    </section>
+
+    <section class="panel hidden" id="view-models">
+      <div class="panel-head">
+        <h2>Model Health</h2>
+        <p>Champion / challenger registry with verification metrics.</p>
+      </div>
+      <div id="models-table" class="data-table"></div>
+      <div class="panel-head sub">
+        <h2>Data Sources</h2>
+        <p>Free-first registry. BLOCKED_EXTERNAL_DEPENDENCY means not claimed operational.</p>
+      </div>
+      <div id="sources-table" class="data-table"></div>
+    </section>
+
+    <section class="panel hidden" id="view-health">
+      <div class="panel-head">
+        <h2>System Health</h2>
+        <p>Ingestion, latency, failures, reduced-capability mode.</p>
+      </div>
+      <pre id="health-json" class="codeblock"></pre>
+      <button id="verify-btn" class="primary">Run Verification Benchmark</button>
+      <pre id="verify-json" class="codeblock"></pre>
+    </section>
+  </main>
+
+  <footer>
+    <span>Integrity classes: OBSERVED · INFERRED · FORECAST · SCENARIO · HYPOTHESIS · UNKNOWN</span>
+    <span id="integrity-note">Stage 1 vertical slice</span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
